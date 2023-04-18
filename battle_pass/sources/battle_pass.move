@@ -58,7 +58,7 @@ module battle_pass::battle_pass{
       name: string::utf8(name_bytes),
       description: string::utf8(description_bytes),
       url: url::new_unsafe_from_bytes(url_bytes),
-      level: 0,
+      level: 1,
       level_cap: LEVEL_CAP,
       xp: 0,
       xp_to_next_level: XP_TO_NEXT_LEVEL,
@@ -126,7 +126,17 @@ module battle_pass::battle_pass{
 
   #[test_only]
   public fun id(battle_pass: &BattlePass): ID {
-    object::uid_to_inner(battle_pass.id)
+    object::uid_to_inner(&battle_pass.id)
+  }
+
+  #[test_only]
+  public fun level(battle_pass: &BattlePass): u64 {
+    battle_pass.level
+  }
+
+  #[test_only]
+  public fun xp(battle_pass: &BattlePass): u64 {
+    battle_pass.xp
   }
 
 }
