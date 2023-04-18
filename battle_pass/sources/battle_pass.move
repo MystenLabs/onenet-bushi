@@ -15,7 +15,7 @@ module battle_pass::battle_pass{
   const LEVEL_CAP: u64 = 70;
 
   /// Battle pass struct
-  struct BattePass has key, store{
+  struct BattlePass has key, store{
     id: UID,
     name: String,
     description: String,
@@ -52,8 +52,8 @@ module battle_pass::battle_pass{
   }
 
   /// mint a battle pass NFT that has level and xp set to 0
-  public fun mint_default(_: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, ctx: &mut TxContext): BattePass{
-    BattePass { 
+  public fun mint_default(_: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, ctx: &mut TxContext): BattlePass{
+    BattlePass { 
       id: object::new(ctx), 
       name: string::utf8(name_bytes),
       description: string::utf8(description_bytes),
@@ -73,7 +73,7 @@ module battle_pass::battle_pass{
   }
 
   /// to create an upgrade ticket the mint cap is needed
-  /// this means the entity that can mint battle passes can also issue a ticket to upgrade them
+  /// this means the entity that can mint a battle passe can also issue a ticket to upgrade it
   /// but the function can be altered so that the two are separate entities
   public fun create_upgrade_ticket(_: &MintCap, battle_pass_id: ID, xp_added: u64, ctx: &mut TxContext): UpgradeTicket {
     UpgradeTicket { id: object::new(ctx), battle_pass_id, xp_added }
@@ -87,7 +87,7 @@ module battle_pass::battle_pass{
 
   /// a battle pass holder will call this function to upgrade the battle pass
   /// every time a level is incremented, xp is set to 0
-  public fun upgrade_battle_pass(battle_pass: &mut BattePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext){
+  public fun upgrade_battle_pass(battle_pass: &mut BattlePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext){
 
     // make sure that upgrade ticket is for this battle pass
     let battle_pass_id = object::uid_to_inner(&battle_pass.id);
@@ -115,6 +115,18 @@ module battle_pass::battle_pass{
     // delete the upgrade ticket so that it cannot be re-used
     let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, xp_added: _ } = upgrade_ticket;
     object::delete(upgrade_ticket_id)
+  }
+
+  // === Test only ===
+
+  #[test_only]
+  public fun init_test(ctx: &mut TxContext){
+    init(ctx);
+  }
+
+  #[test_only]
+  public fun id(battle_pass: &BattlePass): ID {
+    battle_pass.id
   }
 
 }
