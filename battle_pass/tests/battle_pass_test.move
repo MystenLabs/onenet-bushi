@@ -44,6 +44,20 @@ module battle_pass::battle_pass_test {
     test_scenario::return_to_address(user, battle_pass);
     assert!(!test_scenario::has_most_recent_for_address<UpgradeTicket>(user), EObjectShouldHaveNotBeenFound);
 
+    // next transaction by admin to issue one more upgrade ticket
+    test_scenario::next_tx(scenario, admin);
+    create_upgrade_ticket_and_transfer(admin, user, 700, scenario);
+
+    // next transaction by user to upgraed again their battle pass
+    test_scenario::next_tx(scenario, user);
+    upgrade_battle_pass(user, scenario);
+
+    // next transaction by user to make sure the battle pass is upgraded properly
+    test_scenario::next_tx(scenario, user);
+    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
+    assert!(battle_pass::level(&battle_pass) == 2, EIncorrectLevel);
+    assert!(battle_pass::xp(&battle_pass) == 0, EIncorrectXP);
+    test_scenario::return_to_address(user, battle_pass);
 
     test_scenario::end(scenario_val);
 
