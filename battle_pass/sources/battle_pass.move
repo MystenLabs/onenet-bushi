@@ -126,7 +126,7 @@ module battle_pass::battle_pass{
 
   #[test_only]
   public fun id(battle_pass: &BattlePass): ID {
-    battle_pass.id
+    object::uid_to_inner(battle_pass.id)
   }
 
 }
