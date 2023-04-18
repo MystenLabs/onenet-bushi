@@ -7,6 +7,10 @@ module battle_pass::battle_pass{
   use sui::tx_context::{Self, TxContext};
   use sui::url::{Self, Url};
 
+  // errors
+  const EUpgradeNotPossible: u64 = 0;
+
+  // constants
   const XP_TO_NEXT_LEVEL: u64 = 1000;
   const LEVEL_CAP: u64 = 70;
 
@@ -34,7 +38,7 @@ module battle_pass::battle_pass{
     // ID of the battle pass that this ticket can upgrade
     battle_pass_id: ID,
     // experience that will be added to the battle pass
-    experience: u64,
+    xp_added: u64,
   }
 
   /// init function
@@ -71,14 +75,46 @@ module battle_pass::battle_pass{
   /// to create an upgrade ticket the mint cap is needed
   /// this means the entity that can mint battle passes can also issue a ticket to upgrade them
   /// but the function can be altered so that the two are separate entities
-  public fun create_upgrade_ticket(_: &MintCap, battle_pass_id: ID, experience: u64, ctx: &mut TxContext): UpgradeTicket {
-    UpgradeTicket { id: object::new(ctx), battle_pass_id, experience }
+  public fun create_upgrade_ticket(_: &MintCap, battle_pass_id: ID, xp_added: u64, ctx: &mut TxContext): UpgradeTicket {
+    UpgradeTicket { id: object::new(ctx), battle_pass_id, xp_added }
   }
 
   /// call the `create_upgrade_ticket` and send the ticket to a specific address
-  public fun create_upgrade_ticket_and_transfer(mint_cap: &MintCap, battle_pass_id: ID, experience: u64, recipient: address, ctx: &mut TxContext){
-    let upgrade_ticket = create_upgrade_ticket(mint_cap, battle_pass_id, experience, ctx);
+  public fun create_upgrade_ticket_and_transfer(mint_cap: &MintCap, battle_pass_id: ID, xp_added: u64, recipient: address, ctx: &mut TxContext){
+    let upgrade_ticket = create_upgrade_ticket(mint_cap, battle_pass_id, xp_added, ctx);
     transfer::transfer(upgrade_ticket, recipient)
+  }
+
+  /// a battle pass holder will call this function to upgrade the battle pass
+  /// every time a level is incremented, xp is set to 0
+  public fun upgrade_battle_pass(battle_pass: &mut BattePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext){
+
+    // make sure that upgrade ticket is for this battle pass
+    let battle_pass_id = object::uid_to_inner(&battle_pass.id);
+    assert!(battle_pass_id == upgrade_ticket.battle_pass_id, EUpgradeNotPossible);
+
+    // if already in max level delete upgrade ticket and return
+    // we could also abort here
+    if (battle_pass.level == battle_pass.level_cap) {
+      // delete the upgrade ticket so that it cannot be re-used
+      let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, xp_added: _ } = upgrade_ticket;
+      object::delete(upgrade_ticket_id);
+      return
+    };
+
+    // if enough xp to get to next level increment level and set xp to 0
+    if ( battle_pass.xp + upgrade_ticket.xp_added >= battle_pass.xp_to_next_level ) {
+      battle_pass.level = battle_pass.level + 1;
+      battle_pass.xp = 0;
+    } 
+    // if not enough xp to next level increment the xp of battle pass
+    else {
+      battle_pass.xp = battle_pass.xp + upgrade_ticket.xp_added;
+    };
+
+    // delete the upgrade ticket so that it cannot be re-used
+    let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, xp_added: _ } = upgrade_ticket;
+    object::delete(upgrade_ticket_id)
   }
 
 }
