@@ -51,25 +51,35 @@ module battle_pass::battle_pass{
     transfer::transfer(mint_cap, tx_context::sender(ctx))
   }
 
-  /// mint a battle pass NFT that has level and xp set to 0
-  public fun mint_default(_: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, ctx: &mut TxContext): BattlePass{
+  /// mint a battle pass NFT
+  public fun mint(_: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, ctx: &mut TxContext): BattlePass{
     BattlePass { 
       id: object::new(ctx), 
       name: string::utf8(name_bytes),
       description: string::utf8(description_bytes),
       url: url::new_unsafe_from_bytes(url_bytes),
-      level: 1,
+      level,
       level_cap: LEVEL_CAP,
-      xp: 0,
+      xp,
       xp_to_next_level: XP_TO_NEXT_LEVEL,
     }
-
   }
 
-  /// call the mint_default and then transfer the NFT to a specific address
+  /// mint a battle pass NFT that has level set to 1 and xp set to 0
+  public fun mint_default(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, ctx: &mut TxContext): BattlePass{
+    mint(mint_cap, name_bytes, description_bytes, url_bytes, 1, 0, ctx)
+  }
+
+  /// mint a battle pass with level set to 1 and xp set to 0 and then transfer it to a specific address
   public fun mint_default_and_transfer(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, recipient: address, ctx: &mut TxContext) {
     let battle_pass = mint_default(mint_cap, name_bytes, description_bytes, url_bytes, ctx);
     transfer::transfer(battle_pass, recipient)
+  }
+
+  // mint a battle pass and transfer it to a specific address
+  public fun mint_and_transfer(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, recipient: address, ctx: &mut TxContext){
+      let battle_pass = mint(mint_cap, name_bytes, description_bytes, url_bytes, level, xp, ctx);
+      transfer::transfer(battle_pass, recipient)
   }
 
   /// to create an upgrade ticket the mint cap is needed
