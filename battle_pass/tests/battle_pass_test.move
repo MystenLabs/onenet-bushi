@@ -100,7 +100,6 @@ module battle_pass::battle_pass_test {
     test_scenario::next_tx(scenario, user);
     ensure_battle_pass_level_xp_as_intended(70, 0, user, scenario);
 
-
     test_scenario::end(scenario_val);
   }
 
@@ -171,11 +170,12 @@ module battle_pass::battle_pass_test {
     test_scenario::return_to_address(user, battle_pass);
   }
 
-  /// ensures battle pass level is as intended, aborts otherwise
+  /// ensures battle pass level and xp is as intended, aborts otherwise
   fun ensure_battle_pass_level_xp_as_intended(intended_level: u64, intended_xp: u64, user: address, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
     assert!(battle_pass::xp(&battle_pass) == intended_xp, EIncorrectXP);
     test_scenario::return_to_address(user, battle_pass);
   }
+  
 }
