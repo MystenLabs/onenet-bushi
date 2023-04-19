@@ -51,6 +51,8 @@ module battle_pass::battle_pass{
     transfer::transfer(mint_cap, tx_context::sender(ctx))
   }
 
+  // === Mint functions ====
+
   /// mint a battle pass NFT
   public fun mint(_: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, ctx: &mut TxContext): BattlePass{
     BattlePass { 
@@ -82,6 +84,8 @@ module battle_pass::battle_pass{
       transfer::transfer(battle_pass, recipient)
   }
 
+  // === Upgrade ticket ====
+
   /// to create an upgrade ticket the mint cap is needed
   /// this means the entity that can mint a battle passe can also issue a ticket to upgrade it
   /// but the function can be altered so that the two are separate entities
@@ -94,6 +98,8 @@ module battle_pass::battle_pass{
     let upgrade_ticket = create_upgrade_ticket(mint_cap, battle_pass_id, xp_added, ctx);
     transfer::transfer(upgrade_ticket, recipient)
   }
+
+  // === Upgrade battle pass ===
 
   /// a battle pass holder will call this function to upgrade the battle pass
   /// every time a level is incremented, xp is set to 0
