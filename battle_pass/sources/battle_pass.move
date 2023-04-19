@@ -87,7 +87,7 @@ module battle_pass::battle_pass{
   // === Upgrade ticket ====
 
   /// to create an upgrade ticket the mint cap is needed
-  /// this means the entity that can mint a battle passe can also issue a ticket to upgrade it
+  /// this means the entity that can mint a battle pass can also issue a ticket to upgrade it
   /// but the function can be altered so that the two are separate entities
   public fun create_upgrade_ticket(_: &MintCap, battle_pass_id: ID, xp_added: u64, ctx: &mut TxContext): UpgradeTicket {
     UpgradeTicket { id: object::new(ctx), battle_pass_id, xp_added }
