@@ -72,16 +72,16 @@ module battle_pass::battle_pass{
     mint(mint_cap, name_bytes, description_bytes, url_bytes, 1, 0, ctx)
   }
 
-  /// mint a battle pass with level set to 1 and xp set to 0 and then transfer it to a specific address
-  public fun mint_default_and_transfer(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, recipient: address, ctx: &mut TxContext) {
-    let battle_pass = mint_default(mint_cap, name_bytes, description_bytes, url_bytes, ctx);
-    transfer::transfer(battle_pass, recipient)
-  }
-
   // mint a battle pass and transfer it to a specific address
   public fun mint_and_transfer(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, recipient: address, ctx: &mut TxContext){
       let battle_pass = mint(mint_cap, name_bytes, description_bytes, url_bytes, level, xp, ctx);
       transfer::transfer(battle_pass, recipient)
+  }
+
+  /// mint a battle pass with level set to 1 and xp set to 0 and then transfer it to a specific address
+  public fun mint_default_and_transfer(mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, recipient: address, ctx: &mut TxContext) {
+    let battle_pass = mint_default(mint_cap, name_bytes, description_bytes, url_bytes, ctx);
+    transfer::transfer(battle_pass, recipient)
   }
 
   // === Upgrade ticket ====

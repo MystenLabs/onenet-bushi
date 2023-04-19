@@ -2,8 +2,9 @@
 
 module battle_pass::battle_pass_test {
   use sui::test_scenario::{Self, Scenario};
+  use sui::transfer;
   
-  use battle_pass::battle_pass::{BattlePass, Self, MintCap, UpgradeTicket};
+  use battle_pass::battle_pass::{BattlePass, Self, MintCap, UpgradeTicket, EUpgradeNotPossible};
 
   const EIncorrectLevel: u64 = 0;
   const EIncorrectXP: u64 = 1;
@@ -103,6 +104,43 @@ module battle_pass::battle_pass_test {
     test_scenario::end(scenario_val);
   }
 
+  #[test]
+  #[expected_failure(abort_code = EUpgradeNotPossible)]
+  fun test_upgrade_with_wrong_ticket() {
+
+    let admin = @0x1;
+    let user1 = @0x2;
+    let user2 = @0x3;
+
+    // module is initialized by admin
+    let scenario_val = test_scenario::begin(admin);
+    let scenario = &mut scenario_val;
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to create a battle pass and send in to user1
+    test_scenario::next_tx(scenario, admin);
+    mint_default_and_transfer(admin, user1, scenario);
+
+    // next transaction by admin to create an upgrade ticket for battle pass of user1
+    test_scenario::next_tx(scenario, admin);
+    create_upgrade_ticket_and_transfer(admin, user1, 500, scenario);
+
+    // next transaction by admin to create a battle pass for user2
+    test_scenario::next_tx(scenario, admin);
+    mint_default_and_transfer(admin, user2, scenario);
+
+    // next transaction by user1 that sends their upgrade ticket to user2
+    test_scenario::next_tx(scenario, user1);
+    let upgrade_ticket = test_scenario::take_from_address<UpgradeTicket>(scenario, user1);
+    transfer::public_transfer(upgrade_ticket, user2);
+
+    // next transaction by user2 that tries to upgrade their battle pass with the ticket of user1
+    test_scenario::next_tx(scenario, user2);
+    upgrade_battle_pass(user2, scenario);
+
+    test_scenario::end(scenario_val);
+  }
+
 
   fun mint_and_transfer(admin: address, recipient: address, level: u64, xp: u64, scenario: &mut Scenario){
     let mint_cap = test_scenario::take_from_address<MintCap>(scenario, admin);
@@ -125,6 +163,7 @@ module battle_pass::battle_pass_test {
     test_scenario::return_to_address(recipient, battle_pass);
   }
 
+  /// upgrade the last battle pass user has received using the last ticket they have received
   fun upgrade_battle_pass(user: address, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     let upgrade_ticket = test_scenario::take_from_address<UpgradeTicket>(scenario, user);
@@ -132,6 +171,7 @@ module battle_pass::battle_pass_test {
     test_scenario::return_to_address(user, battle_pass);
   }
 
+  /// ensures battle pass level is as intended, aborts otherwise
   fun ensure_battle_pass_level_xp_as_intended(intended_level: u64, intended_xp: u64, user: address, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
