@@ -38,10 +38,7 @@ module battle_pass::battle_pass_test {
     // 1. battle pass is upgraded properly
     // 2. upgrade ticket is burned properly
     test_scenario::next_tx(scenario, user);
-    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
-    assert!(battle_pass::level(&battle_pass) == 1, EIncorrectLevel);
-    assert!(battle_pass::xp(&battle_pass) == 400, EIncorrectXP);
-    test_scenario::return_to_address(user, battle_pass);
+    ensure_battle_pass_level_xp_as_intended(1, 400, user, scenario);
     assert!(!test_scenario::has_most_recent_for_address<UpgradeTicket>(user), EObjectShouldHaveNotBeenFound);
 
     // next transaction by admin to issue one more upgrade ticket
@@ -54,10 +51,7 @@ module battle_pass::battle_pass_test {
 
     // next transaction by user to make sure the battle pass is upgraded properly
     test_scenario::next_tx(scenario, user);
-    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
-    assert!(battle_pass::level(&battle_pass) == 2, EIncorrectLevel);
-    assert!(battle_pass::xp(&battle_pass) == 0, EIncorrectXP);
-    test_scenario::return_to_address(user, battle_pass);
+    ensure_battle_pass_level_xp_as_intended(2, 0, user, scenario);
 
     test_scenario::end(scenario_val);
   }
@@ -90,10 +84,7 @@ module battle_pass::battle_pass_test {
     // 1. xp is 0
     // 2. level is 70
     test_scenario::next_tx(scenario, user);
-    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
-    assert!(battle_pass::level(&battle_pass) == 70, EIncorrectLevel);
-    assert!(battle_pass::xp(&battle_pass) == 0, EIncorrectXP);
-    test_scenario::return_to_address(user, battle_pass);
+    ensure_battle_pass_level_xp_as_intended(70, 0, user, scenario);
 
     // next transaction by admin to issue one more upgrade ticket
     test_scenario::next_tx(scenario, admin);
@@ -106,16 +97,12 @@ module battle_pass::battle_pass_test {
     // next transaction by user to make sure that battle pass is not upgraded
     // i.e.: level should remain 70 and the xp remain 0
     test_scenario::next_tx(scenario, user);
-    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
-    assert!(battle_pass::level(&battle_pass) == 70, EIncorrectLevel);
-    assert!(battle_pass::xp(&battle_pass) == 0, EIncorrectXP);
-    test_scenario::return_to_address(user, battle_pass);
+    ensure_battle_pass_level_xp_as_intended(70, 0, user, scenario);
 
 
     test_scenario::end(scenario_val);
   }
 
-  // TODO: write 1-2 more tests that should abort
 
   fun mint_and_transfer(admin: address, recipient: address, level: u64, xp: u64, scenario: &mut Scenario){
     let mint_cap = test_scenario::take_from_address<MintCap>(scenario, admin);
@@ -142,6 +129,13 @@ module battle_pass::battle_pass_test {
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     let upgrade_ticket = test_scenario::take_from_address<UpgradeTicket>(scenario, user);
     battle_pass::upgrade_battle_pass(&mut battle_pass, upgrade_ticket, test_scenario::ctx(scenario));
+    test_scenario::return_to_address(user, battle_pass);
+  }
+
+  fun ensure_battle_pass_level_xp_as_intended(intended_level: u64, intended_xp: u64, user: address, scenario: &mut Scenario){
+    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
+    assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
+    assert!(battle_pass::xp(&battle_pass) == intended_xp, EIncorrectXP);
     test_scenario::return_to_address(user, battle_pass);
   }
 }
