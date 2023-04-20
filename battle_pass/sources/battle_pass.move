@@ -153,12 +153,12 @@ module battle_pass::battle_pass{
         remaining_xp = remaining_xp - battle_pass.xp_to_next_level;
         // update the xp needed to get to next level
         battle_pass.xp_to_next_level = battle_pass.xp_to_next_level + BASE_XP_TO_NEXT_LEVEL;
-        // if reached level 70, set current xp to 0
+        // if reached level 70, set remaining xp to 0
         if (battle_pass.level == 70 ) {
           remaining_xp = 0;
         }
       };
-      // update battle pass xp to current xp
+      // update battle pass xp to remaining xp
       battle_pass.xp = remaining_xp;
 
       // delete the upgrade ticket so that it cannot be re-used
