@@ -13,7 +13,7 @@ module battle_pass::battle_pass{
   const EUpgradeNotPossible: u64 = 0;
 
   // constants
-  const XP_TO_NEXT_LEVEL: u64 = 1000;
+  const BASE_XP_TO_NEXT_LEVEL: u64 = 1000;
   const LEVEL_CAP: u64 = 70;
 
   /// Battle pass struct
@@ -79,7 +79,7 @@ module battle_pass::battle_pass{
         level,
         level_cap: LEVEL_CAP,
         xp,
-        xp_to_next_level: XP_TO_NEXT_LEVEL,
+        xp_to_next_level: (level + 1) * BASE_XP_TO_NEXT_LEVEL,
       }
   }
 
@@ -128,7 +128,7 @@ module battle_pass::battle_pass{
   // === Upgrade battle pass ===
 
   /// a battle pass holder will call this function to upgrade the battle pass
-  /// every time a level is incremented, xp is set to 0
+  /// every time a level is incremented, excess xp carries over to next level
   public fun upgrade_battle_pass(
     battle_pass: &mut BattlePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext
     ){
@@ -145,15 +145,21 @@ module battle_pass::battle_pass{
         return
       };
 
-      // if enough xp to get to next level increment level and set xp to 0
-      if ( battle_pass.xp + upgrade_ticket.xp_added >= battle_pass.xp_to_next_level ) {
+      let remaining_xp = battle_pass.xp + upgrade_ticket.xp_added;
+      while ( remaining_xp >= battle_pass.xp_to_next_level ){
+        // increment the level
         battle_pass.level = battle_pass.level + 1;
-        battle_pass.xp = 0;
-      } 
-      // if not enough xp to next level increment the xp of battle pass
-      else {
-        battle_pass.xp = battle_pass.xp + upgrade_ticket.xp_added;
+        // substract the xp used to get to next level
+        remaining_xp = remaining_xp - battle_pass.xp_to_next_level;
+        // update the xp needed to get to next level
+        battle_pass.xp_to_next_level = battle_pass.xp_to_next_level + BASE_XP_TO_NEXT_LEVEL;
+        // if reached level 70, set current xp to 0
+        if (battle_pass.level == 70 ) {
+          remaining_xp = 0;
+        }
       };
+      // update battle pass xp to current xp
+      battle_pass.xp = remaining_xp;
 
       // delete the upgrade ticket so that it cannot be re-used
       let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, xp_added: _ } = upgrade_ticket;
@@ -181,7 +187,7 @@ module battle_pass::battle_pass{
 
   #[test_only]
   public fun init_test(ctx: &mut TxContext){
-    init(ctx);
+    init(BATTLE_PASS {}, ctx);
   }
 
   #[test_only]
