@@ -1,8 +1,10 @@
 module battle_pass::battle_pass{
 
-  use std::string::{Self, String};
+  use std::string::utf8;
 
+  use sui::display::{Self, Display};
   use sui::object::{Self, ID, UID};
+  use sui::package;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
   use sui::url::{Self, Url};
@@ -17,8 +19,6 @@ module battle_pass::battle_pass{
   /// Battle pass struct
   struct BattlePass has key, store{
     id: UID,
-    name: String,
-    description: String,
     url: Url,
     level: u64,
     level_cap: u64,
@@ -32,6 +32,9 @@ module battle_pass::battle_pass{
     id: UID,
   }
 
+  /// One-time-witness for display
+  struct BATTLE_PASS has drop {}
+
   /// Upgrade ticket
   struct UpgradeTicket has key, store {
     id: UID,
@@ -42,25 +45,36 @@ module battle_pass::battle_pass{
   }
 
   /// init function
-  fun init(ctx: &mut TxContext){
+  fun init(otw: BATTLE_PASS, ctx: &mut TxContext){
+
+    let publisher_address = tx_context::sender(ctx);
+
+    // claim `publisher` object
+    let publisher = package::claim(otw, ctx);
+    // create a display object
+    let display = display::new<BattlePass>(&publisher, ctx);
+    // set display
+    // TODO: determine display standards
+    set_display_fields(&mut display);
+    // transfer display to publisher_address
+    transfer::public_transfer(display, publisher_address);
+    // transfer publisher object to publisher_address
+    transfer::public_transfer(publisher, publisher_address);
 
     // create Mint Capability
     let mint_cap = MintCap { id: object::new(ctx) };
-
     // transfer mint cap to address that published the module
-    transfer::transfer(mint_cap, tx_context::sender(ctx))
+    transfer::transfer(mint_cap, publisher_address)
   }
 
   // === Mint functions ====
 
   /// mint a battle pass NFT
   public fun mint(
-    _: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, ctx: &mut TxContext
+    _: &MintCap, url_bytes: vector<u8>, level: u64, xp: u64, ctx: &mut TxContext
     ): BattlePass{
       BattlePass { 
         id: object::new(ctx), 
-        name: string::utf8(name_bytes),
-        description: string::utf8(description_bytes),
         url: url::new_unsafe_from_bytes(url_bytes),
         level,
         level_cap: LEVEL_CAP,
@@ -71,24 +85,24 @@ module battle_pass::battle_pass{
 
   /// mint a battle pass NFT that has level set to 1 and xp set to 0
   public fun mint_default(
-    mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, ctx: &mut TxContext
+    mint_cap: &MintCap, url_bytes: vector<u8>, ctx: &mut TxContext
     ): BattlePass{
-      mint(mint_cap, name_bytes, description_bytes, url_bytes, 1, 0, ctx)
+      mint(mint_cap, url_bytes, 1, 0, ctx)
   }
 
   // mint a battle pass and transfer it to a specific address
   public fun mint_and_transfer(
-    mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, level: u64, xp: u64, recipient: address, ctx: &mut TxContext
+    mint_cap: &MintCap, url_bytes: vector<u8>, level: u64, xp: u64, recipient: address, ctx: &mut TxContext
     ){
-      let battle_pass = mint(mint_cap, name_bytes, description_bytes, url_bytes, level, xp, ctx);
+      let battle_pass = mint(mint_cap, url_bytes, level, xp, ctx);
       transfer::transfer(battle_pass, recipient)
   }
 
   /// mint a battle pass with level set to 1 and xp set to 0 and then transfer it to a specific address
   public fun mint_default_and_transfer(
-    mint_cap: &MintCap, name_bytes: vector<u8>, description_bytes: vector<u8>, url_bytes: vector<u8>, recipient: address, ctx: &mut TxContext
+    mint_cap: &MintCap, url_bytes: vector<u8>, recipient: address, ctx: &mut TxContext
     ) {
-      let battle_pass = mint_default(mint_cap, name_bytes, description_bytes, url_bytes, ctx);
+      let battle_pass = mint_default(mint_cap, url_bytes, ctx);
       transfer::transfer(battle_pass, recipient)
   }
 
@@ -144,6 +158,23 @@ module battle_pass::battle_pass{
       // delete the upgrade ticket so that it cannot be re-used
       let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, xp_added: _ } = upgrade_ticket;
       object::delete(upgrade_ticket_id)
+  }
+
+  // === utils ===
+
+  fun set_display_fields(display: &mut Display<BattlePass>) {
+    let fields = vector[
+      utf8(b"name"),
+      utf8(b"description"),
+      utf8(b"url"),
+    ];
+    // url can also be something like `utf8(b"bushi.com/{url})"`
+    let values = vector[
+      utf8(b"Battle Pass"),
+      utf8(b"Play Bushi to earn in-game assets by using this battle pass"),
+      utf8(b"{url}"),
+    ];
+    display::add_multiple<BattlePass>(display, fields, values);
   }
 
   // === Test only ===
