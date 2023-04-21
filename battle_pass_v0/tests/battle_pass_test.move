@@ -44,7 +44,7 @@ module battle_pass::battle_pass_test {
 
     // next transaction by admin to issue one more upgrade ticket
     test_scenario::next_tx(scenario, admin);
-    create_upgrade_ticket_and_transfer(admin, user, 1700, scenario);
+    create_upgrade_ticket_and_transfer(admin, user, 700, scenario);
 
     // next transaction by user to upgraed again their battle pass
     test_scenario::next_tx(scenario, user);
@@ -52,7 +52,8 @@ module battle_pass::battle_pass_test {
 
     // next transaction by user to make sure the battle pass is upgraded properly
     test_scenario::next_tx(scenario, user);
-    ensure_battle_pass_level_xp_as_intended(2, 100, user, scenario);
+    ensure_battle_pass_level_xp_as_intended(2, 0, user, scenario);
+
     test_scenario::end(scenario_val);
   }
 
@@ -69,7 +70,7 @@ module battle_pass::battle_pass_test {
 
     // next transaction by admin to mint a battle pass with level 69 and xp 600
     test_scenario::next_tx(scenario, admin);
-    mint_and_transfer(admin, user, 69, 70800, scenario);
+    mint_and_transfer(admin, user, 69, 600, scenario);
 
     // next transaction by admin to issue an upgrade ticket for 500 xp
     test_scenario::next_tx(scenario, admin);
@@ -139,20 +140,16 @@ module battle_pass::battle_pass_test {
     test_scenario::end(scenario_val);
   }
 
-  // fun init_module(scenario: &mut Scenario){
-  //   let otw = battle_pass::get_otw_for_test(test_scenario::ctx(scenario));
-  //   battle_pass::init_test(otw, test_scenario::ctx(scenario));
-  // }
 
   fun mint_and_transfer(admin: address, recipient: address, level: u64, xp: u64, scenario: &mut Scenario){
     let mint_cap = test_scenario::take_from_address<MintCap>(scenario, admin);
-    battle_pass::mint_and_transfer(&mint_cap,b"dummy.com", level, xp, recipient, test_scenario::ctx(scenario));
+    battle_pass::mint_and_transfer(&mint_cap, b"Battle Pass", b"Play Bushi to earn in-game assets by using this battle pass", b"dummy.com", level, xp, recipient, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
   }
 
   fun mint_default_and_transfer(admin: address, recipient: address, scenario: &mut Scenario){
     let mint_cap = test_scenario::take_from_address<MintCap>(scenario, admin);
-    battle_pass::mint_default_and_transfer(&mint_cap, b"dummy.com", recipient, test_scenario::ctx(scenario));
+    battle_pass::mint_default_and_transfer(&mint_cap, b"Battle Pass", b"Play Bushi to earn in-game assets by using this battle pass", b"dummy.com", recipient, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
   }
 
