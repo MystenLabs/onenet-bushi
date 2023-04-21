@@ -1,0 +1,17 @@
+[package]
+name = "battle_pass"
+version = "0.0.1"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+# testnet-0.32.0
+rev = "cab7e9762d4d75126a78fdd009b405745657fe57"
+
+[dependencies.NftProtocol]
+git = "https://github.com/Origin-Byte/nft-protocol"
+# devnet-0.32.0
+rev = "a8fe56adc1a0e66de9effeeb0c7fae79b8ececc4"
+
+[addresses]
+battle_pass =  "0x0"
