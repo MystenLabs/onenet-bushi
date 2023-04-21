@@ -1,12 +1,19 @@
 module battle_pass::battle_pass{
 
+  use std::string::utf8;
+
+  use sui::display::{Self, Display};
   use sui::object::{Self, ID, UID};
+  use sui::package;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
   use sui::url::{Self, Url};
 
   // errors
   const EUpgradeNotPossible: u64 = 0;
+
+  /// One-time-witness for display
+  struct BATTLE_PASS has drop {}
 
   /// Battle pass struct
   struct BattlePass has key, store{
@@ -34,13 +41,26 @@ module battle_pass::battle_pass{
   }
 
   /// init function
-  fun init(ctx: &mut TxContext){
+  fun init(otw: BATTLE_PASS, ctx: &mut TxContext){
+
+    let publisher_address = tx_context::sender(ctx);
+
+    // claim `publisher` object
+    let publisher = package::claim(otw, ctx);
+    // create a display object
+    let display = display::new<BattlePass>(&publisher, ctx);
+    // set display
+    // TODO: determine display standards
+    set_display_fields(&mut display);
+    // transfer display to publisher_address
+    transfer::public_transfer(display, publisher_address);
+    // transfer publisher object to publisher_address
+    transfer::public_transfer(publisher, publisher_address);
 
     // create Mint Capability
     let mint_cap = MintCap { id: object::new(ctx) };
-
     // transfer mint cap to address that published the module
-    transfer::transfer(mint_cap, tx_context::sender(ctx))
+    transfer::transfer(mint_cap, publisher_address)
   }
 
   // === Mint functions ====
@@ -102,7 +122,6 @@ module battle_pass::battle_pass{
   // === Upgrade battle pass ===
 
   /// a battle pass holder will call this function to upgrade the battle pass
-  /// every time a level is incremented, xp is set to 0
   public fun upgrade_battle_pass(
     battle_pass: &mut BattlePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext
     ){
@@ -116,5 +135,22 @@ module battle_pass::battle_pass{
       // delete the upgrade ticket so that it cannot be re-used
       let UpgradeTicket { id: upgrade_ticket_id, battle_pass_id: _, new_xp: _ , new_level: _}  = upgrade_ticket;
       object::delete(upgrade_ticket_id)
+  }
+
+  // === helpers ===
+
+  fun set_display_fields(display: &mut Display<BattlePass>) {
+    let fields = vector[
+      utf8(b"name"),
+      utf8(b"description"),
+      utf8(b"url"),
+    ];
+    // url can also be something like `utf8(b"bushi.com/{url})"`
+    let values = vector[
+      utf8(b"Battle Pass"),
+      utf8(b"Play Bushi to earn in-game assets by using this battle pass"),
+      utf8(b"{url}"),
+    ];
+    display::add_multiple<BattlePass>(display, fields, values);
   }
 }
