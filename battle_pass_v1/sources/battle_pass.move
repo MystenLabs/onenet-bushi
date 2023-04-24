@@ -171,4 +171,26 @@ module battle_pass::battle_pass{
     ];
     display::add_multiple<BattlePass>(display, fields, values);
   }
+
+  // === test only ===
+  #[test_only]
+  public fun init_test(ctx: &mut TxContext){
+    init(BATTLE_PASS {}, ctx);
+  }
+
+  #[test_only]
+  public fun id(battle_pass: &BattlePass): ID {
+    object::uid_to_inner(&battle_pass.id)
+  }
+
+  #[test_only]
+  public fun level(battle_pass: &BattlePass): u64 {
+    battle_pass.level
+  }
+
+  #[test_only]
+  public fun xp(battle_pass: &BattlePass): u64 {
+    battle_pass.xp
+  }
+
 }
