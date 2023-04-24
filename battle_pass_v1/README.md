@@ -4,7 +4,7 @@ Package name: `battle_pass`
 
 The `battle_pass` package provides the functionality to create Battle Pass objects and update them depending on the progress of the player.
 
-The entity that will publish the package will receive a capability that gives them the permission to:
+The entity that will publish the package will receive a capability of type `MintCap<BattlePass>` that gives them the permission to:
 - Create a Battle Pass NFT for a player.
 - Give permission to update the current level and xp of the Battle Pass NFT of a player.
 
@@ -28,10 +28,10 @@ A Battle Pass can be minted only by the address that published the package, see 
 
 ### Minting a Battle Pass
 In order to mint a Battle Pass, a capability `MintCap<BattlePass>` is required. This capability will be sent to the address that published the package automatically via the `init` function.
-There are 4 functions available for minting:
+There are 4 functions available for minting.
 
 #### Function `mint`
-Function `mint` takes as input the minting capability, the url with the image of the battle pass, the level and the xp the battle pass will have initially, and returns an object of type `BattlePass`. Using programmable transactions, the object then can be transferred to the desired address.
+Function `mint` takes as input the minting capability, the url with the image of the battle pass, the level and the xp the battle pass will have initially, and returns an object of type `BattlePass`. Using programmable transactions, the object can then be passed as input to another function (for example transferred to an address).
 
 ```
 /// mint a battle pass NFT
@@ -67,7 +67,7 @@ public fun mint_default_and_transfer(
 ```
 
 ## Upgrading a Battle Pass
-In order for the Battle Pass to be upgraded with the progress of the player, an object of type `UpogradeTicket` should be mint by the entity that published the package and sent to the player. Then, the custodial wallet of the player can call the `upgrade_battle_pass` function to update the status of their Battle Pass.
+In order for the Battle Pass to be upgraded with the progress of the player, an object of type `UpgradeTicket` should be mint by the entity that published the package and sent to the player. Then, the custodial wallet of the player can call the `upgrade_battle_pass` function to update the status of their Battle Pass.
 
 ### `UpgradeTicket` object
 The `UpgradeTicket` object is defined as follows
@@ -87,13 +87,37 @@ where `id` is the id of the `UpgradeTicket` object (unique per ticket), `battle_
 ### Creating an Upgrade Ticket
 There are two functions that allow the creation of an `UpgradeTicket` object and both require the `MintCap<BattlePass>` to ensure that only an authorized entity can create one.
 
+#### Function `create_upgrade_ticket`
+Function `create_upgrade_ticket` creates and returns an `UpgradeTicket` object.
+```
+/// to create an upgrade ticket the mint cap is needed
+/// this means the entity that can mint a battle pass can also issue a ticket to upgrade it
+/// but the function can be altered so that the two are separate entities
+public fun create_upgrade_ticket(
+  _: &MintCap<BattlePass>, battle_pass_id: ID, new_xp: u64, new_level: u64, ctx: &mut TxContext
+  ): UpgradeTicket 
+```
+
+#### Function `create_upgrade_ticket_and_transfer`
+Function `create_upgrade_ticket_and_transfer` creates an `UpgradeTicket` object by calling the `create_upgrade_ticket` function and transfers it to an address.
+```
+/// call the `create_upgrade_ticket` and send the ticket to a specific address
+public fun create_upgrade_ticket_and_transfer(
+  mint_cap: &MintCap<BattlePass>, battle_pass_id: ID, new_xp: u64, new_level: u64, recipient: address, ctx: &mut TxContext
+  )
+  ```
+
 ### Upgrading the Battle Pass
-
-
-
-
-
+After an upgrade ticket is created and sent to the Battle Pass owner, the Battle Pass owner should call the function `upgrade_battle_pass` in order to update the `level` and `xp` fields of their Battle Pass, giving as input the upgrade ticket and a mutable reference of their Battle Pass.
+ The `upgrade_battle_pass` function aborts if the `id` field of the Battle Pass does not match the `battle_pass_id` field of the upgrade ticket and thus preventing the upgrade of a player's Battle Pass with the progress of another player.
+ Furthermore, after the upgrade is completed the upgrade ticket is destroyed inside the function, in order to prevent re-using it in the future and also for storage optimization.
+ ```
+/// a battle pass holder will call this function to upgrade the battle pass
+/// aborts if upgrade_ticket.battle_pass_id != id of Battle Pass
+public fun upgrade_battle_pass(
+  battle_pass: &mut BattlePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext
+  )
+  ```
 ## OriginByte NFT standards
 - create `BattlePass` collection (an event is emitted)
 - use `MintCap<BattlePass>` and emit a mint event when minting
-- 

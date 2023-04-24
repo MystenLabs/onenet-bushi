@@ -139,6 +139,7 @@ module battle_pass::battle_pass{
   // === Upgrade battle pass ===
 
   /// a battle pass holder will call this function to upgrade the battle pass
+  /// aborts if upgrade_ticket.battle_pass_id != id of Battle Pass
   public fun upgrade_battle_pass(
     battle_pass: &mut BattlePass, upgrade_ticket: UpgradeTicket, _: &mut TxContext
     ){
