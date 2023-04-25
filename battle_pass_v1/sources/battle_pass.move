@@ -41,10 +41,7 @@ module battle_pass::battle_pass{
     season: u64,
   }
 
-  /// Update ticket
-  // note: does not include "new_level_cap" field
-  // meaning level_cap cannot be updated via this ticket
-  // but this field can be added if needed
+  /// Update ticket struct
   struct UpdateTicket has key, store {
     id: UID,
     // ID of the battle pass that this ticket can update
