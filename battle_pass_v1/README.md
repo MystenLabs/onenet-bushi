@@ -6,9 +6,12 @@ Package name: `battle_pass`
 The `battle_pass` package provides the functionality to create Battle Pass objects and update them depending on the progress of the player.
 
 The entity that will publish the package will receive a capability of type `MintCap<BattlePass>` that gives them the permission to:
-- Create a Battle Pass NFT for a player.
+- Mint Battle Pass NFTs.
 - Give permission to the player to update the level, xp and xp to next level of their Battle Pass NFT.
 
+In order for a player's progress in the Battle Pass to be recorded on-chain:
+- The entity owning the `MintCap<BattlePass>` should create an `UpdateTicket` object that contains the updated values for the level, xp and xp to next level for that player, and it should transfer the `UpgradeTicket` object to the player.
+- The player's custodial wallet will then call the `update_battle_pass` function in order for their Battle Pass fields to be updated with the new values.
 ## Battle Pass object & minting
 
 ### `BattlePass` object
@@ -54,7 +57,7 @@ public fun mint_default(
   ): BattlePass
 ```
 
-## Upgrading a Battle Pass
+## Updating a Battle Pass
 In order for the Battle Pass to be updated with the progress of the player, an object of type `UpdateTicket` should be mint by the entity that published the package and sent to the player. Then, the custodial wallet of the player can call the `update_battle_pass` function to update the status of their Battle Pass.
 
 ### `UpdateTicket` object
