@@ -194,6 +194,11 @@ module battle_pass::battle_pass{
   }
 
   #[test_only]
+  public fun url(battle_pass: &BattlePass): Url {
+    battle_pass.url
+  }
+
+  #[test_only]
   public fun level(battle_pass: &BattlePass): u64 {
     battle_pass.level
   }
