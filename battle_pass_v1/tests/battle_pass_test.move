@@ -1,5 +1,6 @@
 #[test_only]
 module battle_pass::battle_pass_test{
+  use std::string::utf8;
 
   use sui::object::ID;
   use sui::test_scenario::{Self, Scenario};
@@ -11,7 +12,8 @@ module battle_pass::battle_pass_test{
 
   const EIncorrectLevel: u64 = 0;
   const EIncorrectXP: u64 = 1;
-  const EObjectShouldHaveNotBeenFound: u64 = 2;
+  const EIncorrectXPToNextLevel: u64 = 2;
+  const EObjectShouldHaveNotBeenFound: u64 = 3;
 
   #[test]
   fun test_flow(){
@@ -33,8 +35,8 @@ module battle_pass::battle_pass_test{
 
     // next transaction by admin to create an update ticket for the user's battle pass and transfer it to the user
     test_scenario::next_tx(scenario, admin);
-    // `new_xp` = 600, `new_level` = 1
-    let upgrade_ticket = create_upgrade_ticket(admin, battle_pass_id,600, 1, scenario);
+    // `new_level` = 2, new_xp = 300, new_xp_to_next_level = 2000
+    let upgrade_ticket = create_upgrade_ticket(admin, battle_pass_id, 2, 300, 2000, scenario);
     transfer::public_transfer(upgrade_ticket, user);
 
     // next transaction by user to upgrade their battle pass
@@ -43,7 +45,7 @@ module battle_pass::battle_pass_test{
 
     // next transaction by user to make sure that the Battle Pass is upgraded properly
     test_scenario::next_tx(scenario, user);
-    ensure_battle_pass_level_xp_as_intended(600, 1, user, scenario);
+    ensure_battle_pass_updated_properly(2, 300, 2000, user, scenario);
 
     test_scenario::end(scenario_val);
   }
@@ -70,7 +72,8 @@ module battle_pass::battle_pass_test{
 
     // next transaction by admin to create an upgrade ticket for battle pass of user1
     test_scenario::next_tx(scenario, admin);
-    let upgrade_ticket = create_upgrade_ticket(admin, battle_pass_1_id, 1, 500, scenario);
+    // new_level = 1, new_xp = 400, new_xp_to_next_level: 600
+    let upgrade_ticket = create_upgrade_ticket(admin, battle_pass_1_id, 1, 400, 1000, scenario);
     transfer::public_transfer(upgrade_ticket, user1);
 
     // next transaction by admin to create a battle pass for user2
@@ -92,18 +95,20 @@ module battle_pass::battle_pass_test{
 
   // === helpers ===
 
-  // mint a battle pass with level = 1 and xp = 0
+  // mint a battle pass with level = 1, xp = 0 
   fun mint_default(admin: address, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint_default(&mint_cap, b"dummy.com", test_scenario::ctx(scenario));
+    let battle_pass = battle_pass::mint_default(&mint_cap, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
   }
 
+  // ensure battle pass fields are correct
+
   // create an upgrade ticket
-  fun create_upgrade_ticket(admin: address, battle_pass_id: ID, new_xp: u64, new_level: u64, scenario: &mut Scenario): UpgradeTicket{
+  fun create_upgrade_ticket(admin: address, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, scenario: &mut Scenario): UpgradeTicket{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let upgrade_ticket = battle_pass::create_upgrade_ticket(&mint_cap, battle_pass_id, new_xp, new_level, test_scenario::ctx(scenario));
+    let upgrade_ticket = battle_pass::create_upgrade_ticket(&mint_cap, battle_pass_id, new_level, new_xp, new_xp_to_next_level, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     upgrade_ticket
   }
@@ -117,9 +122,10 @@ module battle_pass::battle_pass_test{
   }
 
   /// ensures battle pass level and xp is as intended, aborts otherwise
-  fun ensure_battle_pass_level_xp_as_intended(intended_xp: u64, intended_level: u64, user: address, scenario: &mut Scenario){
+  fun ensure_battle_pass_updated_properly(intended_level: u64, intended_xp: u64, intended_xp_to_next_level: u64, user: address, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
+    assert!(battle_pass::xp_to_next_level(&battle_pass) == intended_xp_to_next_level, EIncorrectXPToNextLevel);
     assert!(battle_pass::xp(&battle_pass) == intended_xp, EIncorrectXP);
     test_scenario::return_to_address(user, battle_pass);
   }
