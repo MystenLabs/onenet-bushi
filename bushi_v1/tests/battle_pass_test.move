@@ -205,7 +205,7 @@ module bushi::battle_pass_test{
   fun update_battle_pass(user: address, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     let update_ticket = test_scenario::take_from_address<UpdateTicket>(scenario, user);
-    battle_pass::update_battle_pass(&mut battle_pass, update_ticket, test_scenario::ctx(scenario));
+    battle_pass::update_battle_pass(&mut battle_pass, update_ticket);
     test_scenario::return_to_address(user, battle_pass);
   }
 

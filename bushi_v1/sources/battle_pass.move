@@ -135,7 +135,7 @@ module bushi::battle_pass{
   /// Warning: if update_ticket.new_level >= battle_pass.level_cap, function will not abort
   /// We can add a check
   public fun update_battle_pass(
-    battle_pass: &mut BattlePass, update_ticket: UpdateTicket, _: &mut TxContext
+    battle_pass: &mut BattlePass, update_ticket: UpdateTicket
     ){
       // make sure that update ticket is for this battle pass
       let battle_pass_id = object::uid_to_inner(&battle_pass.id);

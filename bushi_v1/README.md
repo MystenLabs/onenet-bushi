@@ -103,7 +103,7 @@ Furthermore, after the update is completed the update ticket is destroyed inside
 /// a battle pass holder will call this function to update the battle pass
 /// aborts if update_ticket.battle_pass_id != id of Battle Pass
 public fun update_battle_pass(
-  battle_pass: &mut BattlePass, update_ticket: UpdateTicket, _: &mut TxContext
+  battle_pass: &mut BattlePass, update_ticket: UpdateTicket
   )
   ```
 ## OriginByte NFT standards
