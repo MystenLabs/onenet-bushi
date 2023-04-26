@@ -1,5 +1,5 @@
 #[test_only]
-module battle_pass::battle_pass_test{
+module bushi::battle_pass_test{
   use std::string::{String, utf8};
 
   use sui::object::ID;
@@ -9,7 +9,7 @@ module battle_pass::battle_pass_test{
   
   use nft_protocol::mint_cap::MintCap;
 
-  use battle_pass::battle_pass::{BattlePass, Self, UpdateTicket, EUpdateNotPossible};
+  use bushi::battle_pass::{BattlePass, Self, UpdateTicket, EUpdateNotPossible};
 
   // errors
   const EIncorrectDescription: u64 = 0;

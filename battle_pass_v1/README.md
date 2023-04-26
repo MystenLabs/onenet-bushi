@@ -1,9 +1,9 @@
 # Battle pass smart contract v1
 
-Package name: `battle_pass`
+Package name: `bushi`
 
 ## Overview
-The `battle_pass` package provides the functionality to create Battle Pass objects and update them depending on the progress of the player.
+The `battle_pass` module provides the functionality to create Battle Pass objects and update them depending on the progress of the player.
 
 The entity that will publish the package will receive a capability of type `MintCap<BattlePass>` that gives them the permission to:
 - Mint Battle Pass NFTs.

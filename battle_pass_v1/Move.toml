@@ -1,5 +1,5 @@
 [package]
-name = "battle_pass"
+name = "bushi"
 version = "0.0.1"
 
 [dependencies.Sui]
@@ -14,4 +14,4 @@ git = "https://github.com/Origin-Byte/nft-protocol"
 rev = "a8fe56adc1a0e66de9effeeb0c7fae79b8ececc4"
 
 [addresses]
-battle_pass =  "0x0"
+bushi =  "0x0"

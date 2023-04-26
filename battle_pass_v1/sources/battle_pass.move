@@ -1,4 +1,4 @@
-module battle_pass::battle_pass{
+module bushi::battle_pass{
 
   use std::string::{String, utf8};
   use std::option;
