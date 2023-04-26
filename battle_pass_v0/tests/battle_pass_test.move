@@ -1,10 +1,10 @@
 #[test_only]
 
-module battle_pass::battle_pass_test {
+module bushi::battle_pass_test {
   use sui::test_scenario::{Self, Scenario};
   use sui::transfer;
   
-  use battle_pass::battle_pass::{BattlePass, Self, MintCap, UpgradeTicket, EUpgradeNotPossible};
+  use bushi::battle_pass::{BattlePass, Self, MintCap, UpgradeTicket, EUpgradeNotPossible};
 
   const EIncorrectLevel: u64 = 0;
   const EIncorrectXP: u64 = 1;
