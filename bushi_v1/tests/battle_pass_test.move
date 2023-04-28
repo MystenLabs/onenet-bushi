@@ -7,7 +7,9 @@ module bushi::battle_pass_test{
   use sui::transfer;
   use sui::url::{Self, Url};
   
+  // use nft_protocol::collection::Collection;
   use nft_protocol::mint_cap::MintCap;
+  // use nft_protocol::ob_transfer_request;
 
   use bushi::battle_pass::{BattlePass, Self, UpdateTicket, EUpdateNotPossible};
 
@@ -23,9 +25,10 @@ module bushi::battle_pass_test{
 
   // const addresses
   const ADMIN: address = @0x1;
-  const USER: address = @0x1;
-  const USER_1: address = @0x2;
-  const USER_2: address = @0x3;
+  const USER: address = @0x2;
+  const USER_1: address = @0x3;
+  const USER_2: address = @0x4;
+  const CLUTCY: address = @0x5;
 
   #[test]
   fun test_mint_default(){
@@ -45,7 +48,7 @@ module bushi::battle_pass_test{
     test_scenario::next_tx(scenario, USER);
     // make sure that:
     // 1. description is "Play Bushi to earn in-game assets using this battle pass"
-    // 2. url is "dummy.com"
+    // 2. img_url is "dummy.com"
     // 3. level = 1
     // 4. level_cap = 70
     // 5. xp = 0
@@ -74,7 +77,7 @@ module bushi::battle_pass_test{
     test_scenario::next_tx(scenario, USER);
     // make sure that:
     // 1. description is "Play Bushi to earn in-game assets using this battle pass"
-    // 2. url is "dummy.com"
+    // 2. img_url is "dummy.com"
     // 3. level = 2
     // 4. level_cap = 150
     // 5. xp = 500
@@ -109,9 +112,12 @@ module bushi::battle_pass_test{
     test_scenario::next_tx(scenario, USER);
     update_battle_pass(USER, scenario);
 
-    // next transaction by user to make sure that the Battle Pass is updated properly
+    // next transaction by user to make sure that 
+    // 1. the Battle Pass is updated properly
+    // 2. the update ticket is burned
     test_scenario::next_tx(scenario, USER);
     ensure_battle_pass_updated_properly(2, 300, 2000, USER, scenario);
+    assert!(!test_scenario::has_most_recent_for_address<UpdateTicket>(USER), EObjectShouldHaveNotBeenFound);
 
     test_scenario::end(scenario_val);
   }
@@ -155,9 +161,29 @@ module bushi::battle_pass_test{
     test_scenario::end(scenario_val);
   }
 
+  // #[test]
+  // fun test_integration(){
+
+  //   // test is initialized by admin
+  //   let scenario_val = test_scenario::begin(ADMIN);
+  //   let scenario = &mut scenario_val;
+  //   battle_pass::init_test(test_scenario::ctx(scenario));
+
+  //   // next transaction by admin to add policies
+  //   test_scenario::next_tx(scenario, ADMIN);
+  //   // get mint cap and collection
+  //   let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, ADMIN);
+  //   let collection = test_scenario::take_shared<Collection<BattlePass>>(scenario);
+
+  //   // add policies
+
+
+  //   test_scenario::end(scenario_val);
+  // }
+
   // === helpers ===
 
-  // mint a battle pass with level = 1, xp = 0 and fixed description and url, season = 1
+  // mint a battle pass with level = 1, xp = 0 and fixed description and img_url, season = 1
   fun mint_default_with_fixed_description_url(admin: address, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
     let battle_pass = battle_pass::mint_default(&mint_cap, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, 1, test_scenario::ctx(scenario));
@@ -184,7 +210,7 @@ module bushi::battle_pass_test{
   fun ensure_correct_battle_pass_fields(user: address, intended_description: String, intended_url: Url, intended_level: u64, intended_level_cap: u64, intended_xp: u64, intended_xp_to_next_level: u64, season: u64, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     assert!(battle_pass::description(&battle_pass) == intended_description, EIncorrectDescription);
-    assert!(battle_pass::url(&battle_pass) == intended_url, EIncorrectUrl);
+    assert!(battle_pass::img_url(&battle_pass) == intended_url, EIncorrectUrl);
     assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
     assert!(battle_pass::level_cap(&battle_pass) == intended_level_cap, EIncorrectLevelCap);
     assert!(battle_pass::xp(&battle_pass) == intended_xp, EIncorrectXP);

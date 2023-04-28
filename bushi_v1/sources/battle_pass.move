@@ -33,7 +33,7 @@ module bushi::battle_pass{
     id: UID,
     description: String,
     // image url
-    url: Url,
+    img_url: Url,
     level: u64,
     level_cap: u64,
     xp: u64,
@@ -90,7 +90,7 @@ module bushi::battle_pass{
       let battle_pass = BattlePass { 
         id: object::new(ctx),
         description, 
-        url: url::new_unsafe_from_bytes(url_bytes),
+        img_url: url::new_unsafe_from_bytes(url_bytes),
         level,
         level_cap,
         xp,
@@ -157,7 +157,7 @@ module bushi::battle_pass{
     let fields = vector[
       utf8(b"name"),
       utf8(b"description"),
-      utf8(b"url"),
+      utf8(b"img_url"),
       utf8(b"level"),
       utf8(b"level_cap"),
       utf8(b"xp"),
@@ -167,8 +167,8 @@ module bushi::battle_pass{
     let values = vector[
       utf8(b"Battle Pass"),
       utf8(b"{description}"),
-      // url can also be something like `utf8(b"bushi.com/{url})"` or `utf8(b"ipfs/{url})` to save on space
-      utf8(b"{url}"),
+      // img_url can also be something like `utf8(b"bushi.com/{img_url})"` or `utf8(b"ipfs/{img_url})` to save on space
+      utf8(b"{img_url}"),
       utf8(b"{level}"),
       utf8(b"{level_cap}"),
       utf8(b"{xp}"),
@@ -195,8 +195,8 @@ module bushi::battle_pass{
   }
 
   #[test_only]
-  public fun url(battle_pass: &BattlePass): Url {
-    battle_pass.url
+  public fun img_url(battle_pass: &BattlePass): Url {
+    battle_pass.img_url
   }
 
   #[test_only]

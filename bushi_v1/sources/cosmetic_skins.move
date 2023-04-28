@@ -28,7 +28,7 @@ module bushi::cosmetic_skin {
     id: UID,
     name: String,
     description: String,
-    url: Url,
+    img_url: Url,
     level: u64,
     level_cap: u64,
   }
@@ -37,11 +37,7 @@ module bushi::cosmetic_skin {
   struct UpdateTicket has key, store {
     id: UID,
     cosmetic_skin_id: ID,
-    new_name: String,
-    new_description: String,
-    new_url: Url,
     new_level: u64,
-    new_level_cap: u64,
   }
 
   fun init(otw: COSMETIC_SKIN, ctx: &mut TxContext){
@@ -68,13 +64,13 @@ module bushi::cosmetic_skin {
   }
 
   // mint a cosmetic skin
-  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, url: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
+  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
     let cosmetic_skin = CosmeticSkin {
       id: object::new(ctx),
       name,
       description,
-      url: url::new_unsafe_from_bytes(url),
+      img_url: url::new_unsafe_from_bytes(img_url_bytes),
       level,
       level_cap,
     };
@@ -90,36 +86,28 @@ module bushi::cosmetic_skin {
   }
 
   // create a cosmetic skin update ticket
-  public fun create_update_ticket(_: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_name: String, new_description: String, new_url: vector<u8>, new_level: u64, new_level_cap: u64, ctx: &mut TxContext): UpdateTicket {
+  public fun create_update_ticket(_: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext): UpdateTicket {
 
     let update_ticket = UpdateTicket {
       id: object::new(ctx),
       cosmetic_skin_id,
-      new_name,
-      new_description,
-      new_url: url::new_unsafe_from_bytes(new_url),
       new_level,
-      new_level_cap,
     };
 
     update_ticket
   }
 
   // user's custodial wallet will call this function to update their cosmetic skin
-  fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket){
+  public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket){
 
       // make sure update ticket is for this cosmetic skin
       assert!(update_ticket.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EUpdateNotPossible);
       
-      // update cosmetic skin
-      cosmetic_skin.name = update_ticket.new_name;
-      cosmetic_skin.description = update_ticket.new_description;
-      cosmetic_skin.url = update_ticket.new_url;
+      // update cosmetic skin level
       cosmetic_skin.level = update_ticket.new_level;
-      cosmetic_skin.level_cap = update_ticket.new_level_cap;
 
       // delete update ticket
-      let UpdateTicket {id: update_ticket_id, cosmetic_skin_id: _, new_name: _, new_description: _, new_url: _, new_level: _, new_level_cap: _} = update_ticket;
+      let UpdateTicket { id: update_ticket_id, cosmetic_skin_id: _, new_level: _ } = update_ticket;
       object::delete(update_ticket_id);
   }
 
@@ -130,7 +118,7 @@ module bushi::cosmetic_skin {
     let fields = vector[
       utf8(b"name"),
       utf8(b"description"),
-      utf8(b"url"),
+      utf8(b"img_url"),
       utf8(b"level"),
       utf8(b"level_cap"),
     ];
@@ -138,11 +126,47 @@ module bushi::cosmetic_skin {
     let values = vector[
       utf8(b"{name}"),
       utf8(b"{description}"),
-      utf8(b"{url}"),
+      utf8(b"{img_url}"),
       utf8(b"{level}"),
       utf8(b"{level_cap}"),
     ];
 
     display::add_multiple<CosmeticSkin>(display, fields, values);
+  }
+
+  #[test_only]
+  public fun test_init(ctx: &mut TxContext){
+      let otw = COSMETIC_SKIN {};
+      init(otw, ctx);
+  }
+
+  #[test_only]
+  public fun id(cosmetic_skin: &CosmeticSkin): ID {
+    object::uid_to_inner(&cosmetic_skin.id)
+  }
+
+  #[test_only]
+  public fun name(cosmetic_skin: &CosmeticSkin): String {
+    cosmetic_skin.name
+  }
+
+  #[test_only]
+  public fun description(cosmetic_skin: &CosmeticSkin): String {
+    cosmetic_skin.description
+  }
+
+  #[test_only]
+  public fun img_url(cosmetic_skin: &CosmeticSkin): Url {
+    cosmetic_skin.img_url
+  }
+
+  #[test_only]
+  public fun level(cosmetic_skin: &CosmeticSkin): u64 {
+    cosmetic_skin.level
+  }
+
+  #[test_only]
+  public fun level_cap(cosmetic_skin: &CosmeticSkin): u64 {
+    cosmetic_skin.level_cap
   }
 }
