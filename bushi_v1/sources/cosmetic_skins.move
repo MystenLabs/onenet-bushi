@@ -97,7 +97,7 @@ module bushi::cosmetic_skin {
     update_ticket
   }
 
-  // user's custodial wallet will call this function to update their cosmetic skin
+  // the user will call this function to update their cosmetic skin
   public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket){
 
       // make sure update ticket is for this cosmetic skin
