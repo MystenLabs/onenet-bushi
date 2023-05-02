@@ -7,7 +7,7 @@ module bushi::cosmetic_skins_test {
   use sui::transfer;
   use sui::url::{Self, Url};
 
-  use bushi::cosmetic_skin::{Self, CosmeticSkin, UpdateTicket};
+  use bushi::cosmetic_skin::{Self, CosmeticSkin, UpdateTicket, EUpdateNotPossible};
 
   // use nft_protocol::collection::Collection;
   use nft_protocol::mint_cap::MintCap;
@@ -23,6 +23,12 @@ module bushi::cosmetic_skins_test {
   // const addresses
   const ADMIN: address = @0x1;
   const USER: address = @0x2;
+  const USER1: address = @0x3;
+  const USER2: address = @0x4;
+
+  // const values
+  const DUMMY_DESCRIPTION_BYTES: vector<u8> = b"This skin will make your character look like a fairy";
+  const DUMMY_URL_BYTES: vector<u8> = b"dummy.com";
 
   #[test]
   fun test_mint(){
@@ -35,8 +41,8 @@ module bushi::cosmetic_skins_test {
 
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(b"This skin will make your character look like a fairy"), b"dummy.com", 1, 3, scenario);
-    ensure_cosmetic_skin_fields_are_correct(&cosmetic_skin, utf8(b"Fairy"), utf8(b"This skin will make your character look like a fairy"), url::new_unsafe_from_bytes(b"dummy.com"), 1, 3);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    ensure_cosmetic_skin_fields_are_correct(&cosmetic_skin, utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), url::new_unsafe_from_bytes(DUMMY_URL_BYTES), 1, 3);
 
     // transfer cosmetic skin to user
     transfer::public_transfer(cosmetic_skin, USER);
@@ -55,7 +61,7 @@ module bushi::cosmetic_skins_test {
 
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(b"This skin will make your character look like a fairy"), b"dummy.com", 1, 3, scenario);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
     // keep id of cosmetic skin for update ticket later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     // admin transfers cosmetic skin to user
@@ -78,6 +84,48 @@ module bushi::cosmetic_skins_test {
     ensure_cosmetic_skin_is_updated_properly(USER, 2, scenario);
     assert!(!test_scenario::has_most_recent_for_address<UpdateTicket>(USER), EObjectShouldHaveNotBeenFound);
 
+
+    // end test
+    test_scenario::end(scenario_val);
+
+  }
+
+ #[test]
+  #[expected_failure(abort_code = EUpdateNotPossible)]
+  fun test_update_with_wrong_ticket() {
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    cosmetic_skin::test_init(test_scenario::ctx(scenario));
+
+    // next transaction by admin to mint a cosmetic skin and send it to user1
+    test_scenario::next_tx(scenario, ADMIN);
+    let cosmetic_skin_1 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    // keep the id of the cosmetic skin 1 for later
+    let cosmetic_skin_1_id = cosmetic_skin::id(&cosmetic_skin_1);
+    transfer::public_transfer(cosmetic_skin_1, USER1);
+
+    // next transaction by admin to mint a cosmetic skin and send it to user2
+    test_scenario::next_tx(scenario, ADMIN);
+    let cosmetic_skin_2 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    transfer::public_transfer(cosmetic_skin_2, USER2);
+
+    // next transaction by admin to create an update ticket for the cosmetic skin of user1
+    test_scenario::next_tx(scenario, ADMIN);
+    let update_ticket = create_update_ticket(cosmetic_skin_1_id, 2, scenario);
+    // admin transfers update ticket to user1
+    transfer::public_transfer(update_ticket, USER1);
+
+    // next transaction by user1 that sends their update ticket to user2
+    test_scenario::next_tx(scenario, USER1);
+    let update_ticket = test_scenario::take_from_address<UpdateTicket>(scenario, USER1);
+    transfer::public_transfer(update_ticket, USER2);
+
+    // next transaction by user2 to try and update their cosmetic skin with the update ticket of user1
+    test_scenario::next_tx(scenario, USER2);
+    update_cosmetic_skin(USER2, scenario);
 
     // end test
     test_scenario::end(scenario_val);

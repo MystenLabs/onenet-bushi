@@ -7,9 +7,7 @@ module bushi::battle_pass_test{
   use sui::transfer;
   use sui::url::{Self, Url};
   
-  // use nft_protocol::collection::Collection;
   use nft_protocol::mint_cap::MintCap;
-  // use nft_protocol::ob_transfer_request;
 
   use bushi::battle_pass::{BattlePass, Self, UpdateTicket, EUpdateNotPossible};
 
@@ -28,7 +26,10 @@ module bushi::battle_pass_test{
   const USER: address = @0x2;
   const USER_1: address = @0x3;
   const USER_2: address = @0x4;
-  const CLUTCY: address = @0x5;
+
+  // const values
+  const SAMPLE_DESCRIPTION_BYTES: vector<u8> = b"Play Bushi to earn in-game assets using this battle pass";
+  const DUMMY_URL_BYTES: vector<u8> = b"dummy.com";
 
   #[test]
   fun test_mint_default(){
@@ -41,7 +42,7 @@ module bushi::battle_pass_test{
     // next transaction by admin to create a battle pass and transfer it to user
     test_scenario::next_tx(scenario, ADMIN);
     // admin mints a battle pass with level = 1, xp = 0
-    let battle_pass = mint_default(ADMIN, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, 1, scenario);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
     transfer::public_transfer(battle_pass, USER);
 
     // next transaction by user to ensure battle pass fields are correct
@@ -53,7 +54,7 @@ module bushi::battle_pass_test{
     // 4. level_cap = 70
     // 5. xp = 0
     // 6. xp_to_next_level = 1000
-    ensure_correct_battle_pass_fields(USER, utf8(b"Play Bushi to earn in-game assets using this battle pass"), url::new_unsafe_from_bytes(b"dummy.com"), 1, 70, 0, 1000, 1, scenario);
+    ensure_correct_battle_pass_fields(USER, utf8(SAMPLE_DESCRIPTION_BYTES), url::new_unsafe_from_bytes(DUMMY_URL_BYTES), 1, 70, 0, 1000, 1, scenario);
 
     test_scenario::end(scenario_val);
 
@@ -70,7 +71,7 @@ module bushi::battle_pass_test{
     // next transaction by admin to create a battle pass and transfer it to user
     test_scenario::next_tx(scenario, ADMIN);
     // admin mints a battle pass with level = 2, level_cap = 150, xp = 500, xp_to_next_level = 2000
-    let battle_pass = mint(ADMIN, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 2, 150, 500, 2000, 2, scenario);
+    let battle_pass = mint(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 2, 150, 500, 2000, 2, scenario);
     transfer::public_transfer(battle_pass, USER);
 
     // next transaction by user to ensure battle pass fields are correct
@@ -82,7 +83,7 @@ module bushi::battle_pass_test{
     // 4. level_cap = 150
     // 5. xp = 500
     // 6. xp_to_next_level = 2000
-    ensure_correct_battle_pass_fields(USER, utf8(b"Play Bushi to earn in-game assets using this battle pass"), url::new_unsafe_from_bytes(b"dummy.com"), 2, 150, 500, 2000, 2, scenario);
+    ensure_correct_battle_pass_fields(USER, utf8(SAMPLE_DESCRIPTION_BYTES), url::new_unsafe_from_bytes(DUMMY_URL_BYTES), 2, 150, 500, 2000, 2, scenario);
 
     test_scenario::end(scenario_val);
   }
@@ -97,7 +98,7 @@ module bushi::battle_pass_test{
 
     // next transaction by admin to create a battle pass and transfer it to user
     test_scenario::next_tx(scenario, ADMIN);
-    let battle_pass = mint_default_with_fixed_description_url(ADMIN, scenario);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
     // keep the id of the battle pass to create update ticket later
     let battle_pass_id = battle_pass::id(&battle_pass);
     transfer::public_transfer(battle_pass, USER);
@@ -133,7 +134,7 @@ module bushi::battle_pass_test{
 
     // next transaction by admin to create a battle pass and send in to user1
     test_scenario::next_tx(scenario, ADMIN);
-    let battle_pass_1 = mint_default_with_fixed_description_url(ADMIN, scenario);
+    let battle_pass_1 = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
     // keep the id of the battle pass to create update ticket later
     let battle_pass_1_id = battle_pass::id(&battle_pass_1);
     transfer::public_transfer(battle_pass_1, USER_1);
@@ -146,7 +147,7 @@ module bushi::battle_pass_test{
 
     // next transaction by admin to create a battle pass for user2
     test_scenario::next_tx(scenario, ADMIN);
-    let battle_pass_2 = mint_default_with_fixed_description_url(ADMIN, scenario);
+    let battle_pass_2 = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
     transfer::public_transfer(battle_pass_2, USER_2);
 
     // next transaction by user1 that sends their update ticket to user2
@@ -161,35 +162,15 @@ module bushi::battle_pass_test{
     test_scenario::end(scenario_val);
   }
 
-  // #[test]
-  // fun test_integration(){
-
-  //   // test is initialized by admin
-  //   let scenario_val = test_scenario::begin(ADMIN);
-  //   let scenario = &mut scenario_val;
-  //   battle_pass::init_test(test_scenario::ctx(scenario));
-
-  //   // next transaction by admin to add policies
-  //   test_scenario::next_tx(scenario, ADMIN);
-  //   // get mint cap and collection
-  //   let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, ADMIN);
-  //   let collection = test_scenario::take_shared<Collection<BattlePass>>(scenario);
-
-  //   // add policies
-
-
-  //   test_scenario::end(scenario_val);
-  // }
-
   // === helpers ===
 
   // mint a battle pass with level = 1, xp = 0 and fixed description and img_url, season = 1
-  fun mint_default_with_fixed_description_url(admin: address, scenario: &mut Scenario): BattlePass{
-    let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint_default(&mint_cap, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, 1, test_scenario::ctx(scenario));
-    test_scenario::return_to_address(admin, mint_cap);
-    battle_pass
-  }
+  // fun mint_default_with_fixed_description_url(admin: address, scenario: &mut Scenario): BattlePass{
+  //   let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
+  //   let battle_pass = battle_pass::mint_default(&mint_cap, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, 1, test_scenario::ctx(scenario));
+  //   test_scenario::return_to_address(admin, mint_cap);
+  //   battle_pass
+  // }
 
   // mint a battle pass with level = 1, xp = 0 (default)
   fun mint_default(admin: address, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, scenario: &mut Scenario): BattlePass{
