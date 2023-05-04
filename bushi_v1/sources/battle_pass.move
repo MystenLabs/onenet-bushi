@@ -13,7 +13,7 @@ module bushi::battle_pass{
   use nft_protocol::collection;
   use nft_protocol::mint_cap::{Self, MintCap};
   use nft_protocol::mint_event;
-  use nft_protocol::witness;
+  use ob_witness::witness;
 
   // errors
   const EUpdateNotPossible: u64 = 0;

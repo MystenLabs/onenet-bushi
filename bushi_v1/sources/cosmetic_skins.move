@@ -13,7 +13,7 @@ module bushi::cosmetic_skin {
   use nft_protocol::collection;
   use nft_protocol::mint_cap::{Self, MintCap};
   use nft_protocol::mint_event;
-  use nft_protocol::witness;
+  use ob_witness::witness;
 
   // error for when update of cosmetic skin not possible
   const EUpdateNotPossible: u64 = 0;
