@@ -1,5 +1,5 @@
 #[test_only]
-module bushi::cosmetic_skins_test {
+module bushi::cosmetic_skin_test {
   use std::string::{utf8, String};
 
   use sui::object::ID;
