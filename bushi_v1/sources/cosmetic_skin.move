@@ -204,7 +204,7 @@ module bushi::cosmetic_skin {
     // check if OB kiosk
     ob_kiosk::assert_is_ob_kiosk(player_kiosk);
 
-    // deposit the battle pass into the kiosk.
+    // deposit the cosmetic skin into the kiosk.
     ob_kiosk::deposit(player_kiosk, cosmetic_skin, ctx);
   }
 
