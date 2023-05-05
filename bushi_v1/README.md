@@ -110,6 +110,48 @@ public fun update_battle_pass(
   )
   ```
 
+### OriginByte NFT standards support
+- `init` function
+  -  a `Collection<BattlePass>` is created (and thus an event is emitted)
+  -  a `MintCap<BattlePass>` is created
+  -  transfer policy & royalties:
+     - create a transfer policy
+     - register the transfer policy to use allowlists
+     - register the transfer policy to use royalty enforcements
+     - set royalty cuts
+   - withdraw policy:
+     - create a withdraw policy
+   - register the withdraw policy to require a transfer token to withdraw from a kiosk
+- In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
+- functions `mint_to_launchpad` and `mint_default_to_launchpad`: mint a battle pass and deposit it to a warehouse
+- function `export_to_kiosk` deposits a battle pass to a kiosk.
+
+#### Function `mint_to_launchpad`
+```
+// mint to launchpad
+// this is for Clutchy integration
+public fun mint_to_launchpad(
+  mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+  )
+```
+
+
+#### Function `mint_default_to_launchpad`
+```
+// mint to launchpad with default values
+public fun mint_default_to_launchpad(
+  mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+  )
+```
+
+#### Function `export_to_kiosk`
+```
+// export the battle pass to a player's kiosk
+public fun export_to_kiosk(
+  battle_pass: BattlePass, player_kiosk: &mut Kiosk, ctx: &mut TxContext
+  )
+```
+
 ### Tests
 The module `battle_pass_test` contains tests for the `battle_pass` module. The tests performed are the following.
 - `fun test_mint_default()`, which tests that the `mint_default` function sets fields of the battle pass it creates as intended
@@ -117,9 +159,6 @@ The module `battle_pass_test` contains tests for the `battle_pass` module. The t
 - `fun test_update()`, which tests whether after minting a battle pass and issuing an update ticket the fields of the battle pass are updated as intended, and that the update ticket is destroyed after the function has finished executing.
 - `fun test_update_with_wrong_ticket()`, which has `#[expected_failure(abort_code = EUpdateNotPossible)]` and tests that the `update_battle_pass` aborts when is given as input a battle pass and an update ticket that is not created for that battle pass.
 
-### OriginByte NFT standards
-- In the `init` function a `Collection<BattlePass>` is created (and thus an event is emitted).
-- In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
 
 ## The `cosmetic_skins` module
 The `cosmetic_skins` module provides the functionality to create cosmetic skins and update their level.
@@ -190,13 +229,41 @@ The function `update_cosmetic_skin` takes as input a mutable reference to a cosm
 public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket)
 ```
 
+### OriginByte NFT standards
+Similarly to the `BattlePass` object:
+- `init` function
+  -  a `Collection<BattlePass>` is created (and thus an event is emitted)
+   -  a `MintCap<BattlePass>` is created
+   -  transfer policy & royalties:
+      - create a transfer policy
+      - register the transfer policy to use allowlists
+      - register the transfer policy to use royalty enforcements
+      - set royalty cuts
+    - withdraw policy:
+      - create a withdraw policy
+      - register the withdraw policy to require a transfer token to withdraw from a kiosk
+- In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
+- functions `mint_to_launchpad` mints a cosmetic skin and deposit it to a warehouse
+- function `export_to_kiosk` deposits a cosmetic skin to a kiosk
+
+#### Function `mint_to_launchpad`
+``` 
+// mint to launchpad
+// this is for Clutchy integration
+public fun mint_to_launchpad(
+  mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
+  )
+```
+
+#### Function `export_to_kiosk`
+```
+public fun export_to_kiosk(
+    cosmetic_skin: CosmeticSkin, player_kiosk: &mut Kiosk, ctx: &mut TxContext
+    )
+```
+
 ### Tests
 The module `cosmetic_skins_test` contains tests for the `cosmetic_skins` module. The tests performed are the following.
 - `fun test_mint()`, which tests that the `mint` function sets the fields of the cosmetic skin it has created as intended
 - `fun test_update()`, which tests that after minting a cosmetic skin and issuing an update ticket the cosmetic skin is updated as intended, and that the update ticket is destroyed after the function has finished executing.
 - `fun test_update_with_wrong_ticket()`, which has `#[expected_failure(abort_code = EUpdateNotPossible)]` and tests that the `update_cosmetic_skin` aborts when is given as input a cosmetic skin and an update ticket that is not created for that cosmetic skin.
-
-### OriginByte NFT standards
-Similarly to the `BattlePass` object:
-- In the `init` function a `Collection<CosmeticSkin>` is created (and thus an event is emitted).
-- In the mint functions a `MintCap<CosmeticSkin>` is required and a `mint_event` is emitted when a cosmetic skin is minted.

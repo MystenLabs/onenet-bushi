@@ -200,7 +200,7 @@ module bushi::cosmetic_skin {
   // export the cosmetic skin to a player's kiosk
   public fun export_to_kiosk(
     cosmetic_skin: CosmeticSkin, player_kiosk: &mut Kiosk, ctx: &mut TxContext
-    ){
+    ) {
     // check if OB kiosk
     ob_kiosk::assert_is_ob_kiosk(player_kiosk);
 
