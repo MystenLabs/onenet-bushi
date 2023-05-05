@@ -33,10 +33,10 @@ module bushi::battle_pass{
   use ob_utils::utils;
 
 
-  // errors
+  /// errors
   const EUpdateNotPossible: u64 = 0;
 
-  // royalty cut consts
+  /// royalty cut consts
   // TODO: specify the exact values
   // onenet should take 2% royalty
   const COLLECTION_ROYALTY: u16 = 3_00; // this is 3%
@@ -44,20 +44,20 @@ module bushi::battle_pass{
   const ONENET_ROYALTY_CUT: u16 = 95_00; // 95_00 is 95%
   const CLUTCHY_ROYALTY_CUT: u16 = 5_00;
 
-  // wallet addresses to deposit royalties
+  /// wallet addresses to deposit royalties
   // the below values are dummy
   // TODO: add addresses here
   const ONENET_ROYALTY_ADDRESS: address = @0x1;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
 
-  // consts for mint_default
+  /// consts for mint_default
   const DEFAULT_INIT_LEVEL: u64 = 1;
   const DEFAULT_INIT_XP: u64 = 0;
 
   /// One-time-witness
   struct BATTLE_PASS has drop {}
 
-  // Witness struct for Witness-Protected actions
+  /// Witness struct for Witness-Protected actions
   struct Witness has drop {}
 
   /// Battle pass struct
@@ -180,7 +180,7 @@ module bushi::battle_pass{
   }
 
   /// mint a battle pass NFT that has level = 1, xp = 0
-  /// we can specify and change default values
+  // we can specify and change default values
   public fun mint_default(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
@@ -188,7 +188,7 @@ module bushi::battle_pass{
       mint(mint_cap, description, url_bytes, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, season, ctx)
   }
 
-  // mint to launchpad
+  /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
@@ -199,7 +199,7 @@ module bushi::battle_pass{
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
-  // mint to launchpad with default values
+  /// mint to launchpad with default values
   public fun mint_default_to_launchpad(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
@@ -213,7 +213,7 @@ module bushi::battle_pass{
 
   /// to create an update ticket the mint cap is needed
   /// this means the entity that can mint a battle pass can also issue a ticket to update it
-  /// but the function can be altered so that the two are separate entities
+  // but the function can be altered so that the two are separate entities
   public fun create_update_ticket(
     _: &MintCap<BattlePass>, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, ctx: &mut TxContext
     ): UpdateTicket {
@@ -250,7 +250,7 @@ module bushi::battle_pass{
 
   // === exports ===
 
-  // export the battle pass to a player's kiosk
+  /// export the battle pass to a player's kiosk
   public fun export_to_kiosk(
     battle_pass: BattlePass, player_kiosk: &mut Kiosk, ctx: &mut TxContext
     ){

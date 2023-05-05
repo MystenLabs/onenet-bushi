@@ -35,7 +35,7 @@ module bushi::cosmetic_skin {
   // error for when update of cosmetic skin not possible
   const EUpdateNotPossible: u64 = 0;
 
-  // royalty cut consts
+  /// royalty cut consts
   // TODO: specify the exact values
   // onenet should take 2% royalty
   const COLLECTION_ROYALTY: u16 = 3_00; // this is 3%
@@ -43,22 +43,22 @@ module bushi::cosmetic_skin {
   const ONENET_ROYALTY_CUT: u16 = 95_00; // 95_00 is 95%
   const CLUTCHY_ROYALTY_CUT: u16 = 5_00;
 
-  // wallet addresses to deposit royalties
+  /// wallet addresses to deposit royalties
   // the below values are dummy
   // TODO: add addresses here
   const ONENET_ROYALTY_ADDRESS: address = @0x1;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
 
-  // consts for mint_default
+  /// consts for mint_default
   const DEFAULT_INIT_LEVEL: u64 = 1;
   const DEFAULT_INIT_XP: u64 = 0;
 
-  // one-time-witness for publisher
+  /// one-time-witness for publisher
   struct COSMETIC_SKIN has drop {}
 
   struct Witness has drop {}
 
-  // cosmetic skin struct
+  /// cosmetic skin struct
   struct CosmeticSkin has key, store {
     id: UID,
     name: String,
@@ -68,7 +68,7 @@ module bushi::cosmetic_skin {
     level_cap: u64,
   }
 
-  // update ticket to update the cosmetic skin
+  /// update ticket to update the cosmetic skin
   struct UpdateTicket has key, store {
     id: UID,
     cosmetic_skin_id: ID,
@@ -136,7 +136,7 @@ module bushi::cosmetic_skin {
     transfer::public_share_object(withdraw_policy);
   }
 
-  // mint a cosmetic skin
+  /// mint a cosmetic skin
   public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
     let cosmetic_skin = CosmeticSkin {
@@ -158,7 +158,7 @@ module bushi::cosmetic_skin {
     cosmetic_skin
   }
 
-  // mint to launchpad
+  /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
     mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
@@ -169,7 +169,7 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  // create a cosmetic skin update ticket
+  /// create a cosmetic skin update ticket
   public fun create_update_ticket(
     _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext
     ): UpdateTicket {
@@ -181,7 +181,7 @@ module bushi::cosmetic_skin {
     }
   }
 
-  // the user will call this function to update their cosmetic skin
+  /// the user will call this function to update their cosmetic skin
   public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket){
 
       // make sure update ticket is for this cosmetic skin
@@ -197,7 +197,7 @@ module bushi::cosmetic_skin {
 
   // === exports ===
 
-  // export the cosmetic skin to a player's kiosk
+  /// export the cosmetic skin to a player's kiosk
   public fun export_to_kiosk(
     cosmetic_skin: CosmeticSkin, player_kiosk: &mut Kiosk, ctx: &mut TxContext
     ) {
