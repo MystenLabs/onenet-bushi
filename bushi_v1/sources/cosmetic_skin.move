@@ -4,19 +4,54 @@ module bushi::cosmetic_skin {
   use std::string::{utf8, String};
 
   use sui::display::{Self, Display};
+  use sui::kiosk::Kiosk;
   use sui::object::{Self, ID, UID};
   use sui::package;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
   use sui::url::{Self, Url};
 
+  // --- OB imports ---
+
+  use ob_launchpad::warehouse::{Self, Warehouse};
+
   use nft_protocol::collection;
   use nft_protocol::mint_cap::{Self, MintCap};
   use nft_protocol::mint_event;
+  use nft_protocol::royalty;
+  use nft_protocol::royalty_strategy_bps;
+  use nft_protocol::transfer_allowlist;
+  use nft_protocol::transfer_token;
+
+  use ob_kiosk::ob_kiosk;
+
   use ob_permissions::witness;
+
+  use ob_request::transfer_request;
+  use ob_request::withdraw_request;
+
+  use ob_utils::utils;
 
   // error for when update of cosmetic skin not possible
   const EUpdateNotPossible: u64 = 0;
+
+  // royalty cut consts
+  // TODO: specify the exact values
+  // onenet should take 2% royalty
+  const COLLECTION_ROYALTY: u16 = 3_00; // this is 3%
+
+  const ONENET_ROYALTY_CUT: u16 = 95_00; // 95_00 is 95%
+  const CLUTCHY_ROYALTY_CUT: u16 = 5_00;
+
+  // wallet addresses to deposit royalties
+  // the below values are dummy
+  // TODO: add addresses here
+  const ONENET_ROYALTY_ADDRESS: address = @0x1;
+  const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
+
+  // consts for mint_default
+  const DEFAULT_INIT_LEVEL: u64 = 1;
+  const DEFAULT_INIT_XP: u64 = 0;
 
   // one-time-witness for publisher
   struct COSMETIC_SKIN has drop {}
@@ -53,14 +88,52 @@ module bushi::cosmetic_skin {
     // set display fields
     set_display_fields(&mut display);
 
+    // --- transfer policy & royalties ---
+
+    // create a transfer policy (with no policy actions)
+    let (transfer_policy, transfer_policy_cap) = transfer_request::init_policy<CosmeticSkin>(&publisher, ctx);
+
+    // register the policy to use allowlists
+    transfer_allowlist::enforce(&mut transfer_policy, &transfer_policy_cap);
+
+    // register the transfer policy to use royalty enforcements
+    royalty_strategy_bps::enforce(&mut transfer_policy, &transfer_policy_cap);
+
+    // set royalty cuts
+    let shares = vector[ONENET_ROYALTY_CUT, CLUTCHY_ROYALTY_CUT];
+    let royalty_addresses = vector[ONENET_ROYALTY_ADDRESS, CLUTCHY_ROYALTY_ADDRESS];
+    // take a delegated witness from the publisher
+    let delegated_witness = witness::from_publisher(&publisher);
+    royalty_strategy_bps::create_domain_and_add_strategy(delegated_witness,
+        &mut collection,
+        royalty::from_shares(
+            utils::from_vec_to_map(royalty_addresses, shares), ctx,
+        ),
+        COLLECTION_ROYALTY,
+        ctx,
+    );
+
+    // --- withdraw policy ---
+
+    // create a withdraw policy
+    let (withdraw_policy, withdraw_policy_cap) = withdraw_request::init_policy<CosmeticSkin>(&publisher, ctx);
+
+    // cosmetic skins should be withdrawn to kiosks
+    // register the withdraw policy to require a transfer token to withdraw from a kiosk
+    transfer_token::enforce(&mut withdraw_policy, &withdraw_policy_cap);
+
     // --- transfers to address that published the module ---
     let publisher_address = tx_context::sender(ctx);
     transfer::public_transfer(mint_cap, publisher_address);
     transfer::public_transfer(publisher, publisher_address);
     transfer::public_transfer(display, publisher_address);
+    transfer::public_transfer(transfer_policy_cap, publisher_address);
+    transfer::public_transfer(withdraw_policy_cap, publisher_address);
 
     // --- shared objects ---
     transfer::public_share_object(collection);
+    transfer::public_share_object(transfer_policy);
+    transfer::public_share_object(withdraw_policy);
   }
 
   // mint a cosmetic skin
@@ -85,16 +158,27 @@ module bushi::cosmetic_skin {
     cosmetic_skin
   }
 
-  // create a cosmetic skin update ticket
-  public fun create_update_ticket(_: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext): UpdateTicket {
+  // mint to launchpad
+  // this is for Clutchy integration
+  public fun mint_to_launchpad(
+    mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
+    ) {
 
-    let update_ticket = UpdateTicket {
+      let cosmetic_skin = mint(mint_cap, name, description, img_url_bytes, level, level_cap, ctx);
+      // deposit to warehouse
+      warehouse::deposit_nft(warehouse, cosmetic_skin);
+  }
+
+  // create a cosmetic skin update ticket
+  public fun create_update_ticket(
+    _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext
+    ): UpdateTicket {
+
+    UpdateTicket {
       id: object::new(ctx),
       cosmetic_skin_id,
       new_level,
-    };
-
-    update_ticket
+    }
   }
 
   // the user will call this function to update their cosmetic skin
@@ -111,7 +195,20 @@ module bushi::cosmetic_skin {
       object::delete(update_ticket_id);
   }
 
-  // === helpers ===
+  // === exports ===
+
+  // export the cosmetic skin to a player's kiosk
+  public fun export_to_kiosk(
+    cosmetic_skin: CosmeticSkin, player_kiosk: &mut Kiosk, ctx: &mut TxContext
+    ){
+    // check if OB kiosk
+    ob_kiosk::assert_is_ob_kiosk(player_kiosk);
+
+    // deposit the battle pass into the kiosk.
+    ob_kiosk::deposit(player_kiosk, cosmetic_skin, ctx);
+  }
+
+  // === private-helpers ===
 
   fun set_display_fields(display: &mut Display<CosmeticSkin>){
 

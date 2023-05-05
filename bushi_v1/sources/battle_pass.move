@@ -156,6 +156,7 @@ module bushi::battle_pass{
   public fun mint(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
+
       let battle_pass = BattlePass { 
         id: object::new(ctx),
         description, 
@@ -183,6 +184,7 @@ module bushi::battle_pass{
   public fun mint_default(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
+
       mint(mint_cap, description, url_bytes, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, season, ctx)
   }
 
@@ -191,6 +193,7 @@ module bushi::battle_pass{
   public fun mint_to_launchpad(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
+
       let battle_pass = mint(mint_cap, description, url_bytes, level, level_cap, xp, xp_to_next_level, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
@@ -200,6 +203,7 @@ module bushi::battle_pass{
   public fun mint_default_to_launchpad(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
+
       let battle_pass = mint_default(mint_cap, description, url_bytes, level_cap, xp_to_next_level, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
@@ -213,7 +217,14 @@ module bushi::battle_pass{
   public fun create_update_ticket(
     _: &MintCap<BattlePass>, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, ctx: &mut TxContext
     ): UpdateTicket {
-      UpdateTicket { id: object::new(ctx), battle_pass_id, new_level, new_xp, new_xp_to_next_level }
+
+      UpdateTicket { 
+        id: object::new(ctx), 
+        battle_pass_id, 
+        new_level, 
+        new_xp, 
+        new_xp_to_next_level 
+      }
   }
 
   // === Update battle pass ===
@@ -240,9 +251,9 @@ module bushi::battle_pass{
   // === exports ===
 
   // export the battle pass to a player's kiosk
-  public fun export_battle_pass_to_kiosk(
+  public fun export_to_kiosk(
     battle_pass: BattlePass, player_kiosk: &mut Kiosk, ctx: &mut TxContext
-    ) {
+    ){
     // check if OB kiosk
     ob_kiosk::assert_is_ob_kiosk(player_kiosk);
 
