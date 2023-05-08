@@ -226,7 +226,7 @@ module bushi::cosmetic_skin {
   /// lock in-game updates
   // this can be called by the player's custodial wallet before transferring - if the export_to_kiosk function is not called
   // if it is not in-game, this function will do nothing 
-  public fun lock(
+  public fun lock_updates(
     cosmetic_skin: &mut CosmeticSkin
     ) {
 
