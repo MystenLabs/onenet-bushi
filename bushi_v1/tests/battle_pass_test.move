@@ -231,7 +231,7 @@ module bushi::battle_pass_test{
 
   #[test]
   #[expected_failure(abort_code = ECannotUpdate)]
-  fun test_lock() {
+  fun test_lock_updates() {
 
     // test is initialized by admin
     let scenario_val = test_scenario::begin(ADMIN);
