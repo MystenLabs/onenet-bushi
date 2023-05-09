@@ -32,9 +32,10 @@ module bushi::cosmetic_skin {
 
   use ob_utils::utils;
 
-  // error for when update of cosmetic skin not possible
+  /// errors
   const EWrongTicket: u64 = 0;
   const ECannotUpdate: u64 = 1;
+  const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -70,8 +71,8 @@ module bushi::cosmetic_skin {
     in_game: bool,
   }
 
-  /// ticket to allow mutation of the fields of the the cosmetic skin in-game
-  /// will be used after the cosmetic skin is transferred to the custodial wallet of the player
+  /// ticket to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+  /// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
   struct AllowUpdatesTicket has key, store {
     id: UID,
     cosmetic_skin_id: ID,
@@ -173,6 +174,8 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
+  // === Allow updates ticket ====
+
   /// create an AllowUpdatesTicket
   /// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is for
   public fun create_allow_updates_ticket(
@@ -184,6 +187,8 @@ module bushi::cosmetic_skin {
       cosmetic_skin_id
     }
   }
+
+  // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
   public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, allow_updates_ticket: AllowUpdatesTicket){
@@ -199,11 +204,16 @@ module bushi::cosmetic_skin {
       object::delete(allow_updates_ticket_id);
   }
 
+  // === Update cosmetic skin level ===
+
   /// update cosmetic skin level
   /// aborts when in_game is false (cosmetic skin is not in-game)
-  public fun update_level(cosmetic_skin: &mut CosmeticSkin, new_level: u64){
+  public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, new_level: u64){
     // make sure the cosmetic skin is in-game
     assert!(cosmetic_skin.in_game, ECannotUpdate);
+
+    // make sure the new level is not greater than the level cap
+    assert!(new_level <= cosmetic_skin.level_cap, ELevelGreaterOrEqualThanLevelCap);
 
     cosmetic_skin.level = new_level;
   }
@@ -259,7 +269,7 @@ module bushi::cosmetic_skin {
   }
 
   #[test_only]
-  public fun test_init(ctx: &mut TxContext){
+  public fun init_test(ctx: &mut TxContext){
       let otw = COSMETIC_SKIN {};
       init(otw, ctx);
   }

@@ -34,7 +34,9 @@ module bushi::battle_pass{
 
 
   /// errors
-  const EUpdateNotPossible: u64 = 0;
+  const EWrongTicket: u64 = 0;
+  const ECannotUpdate: u64 = 1;
+  const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -71,19 +73,14 @@ module bushi::battle_pass{
     xp: u64,
     xp_to_next_level: u64,
     season: u64,
+    in_game: bool,
   }
 
-  /// Update ticket struct
-  struct UpdateTicket has key, store {
+  /// ticket to allow mutation of the fields of the the battle pass when battle pass is in-game
+  /// should be created and be used after the battle pass is transferred to the custodial wallet of the player
+  struct AllowUpdatesTicket has key, store {
     id: UID,
-    // ID of the battle pass that this ticket can update
     battle_pass_id: ID,
-    // new level of battle pass
-    new_level: u64,
-    // new xp of battle pass
-    new_xp: u64,
-    // new xp to next level of battle pass
-    new_xp_to_next_level: u64,
   }
 
   /// init function
@@ -153,6 +150,7 @@ module bushi::battle_pass{
   // === Mint functions ====
 
   /// mint a battle pass NFT
+  /// by default, in_game = false
   public fun mint(
     mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
@@ -166,6 +164,7 @@ module bushi::battle_pass{
         xp,
         xp_to_next_level,
         season,
+        in_game: false,
       };
 
       // emit a mint event
@@ -209,44 +208,52 @@ module bushi::battle_pass{
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
-  // === Update ticket ====
+  // === Allow updates ticket ====
 
-  /// to create an update ticket the mint cap is needed
-  /// this means the entity that can mint a battle pass can also issue a ticket to update it
-  // but the function can be altered so that the two are separate entities
-  public fun create_update_ticket(
-    _: &MintCap<BattlePass>, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, ctx: &mut TxContext
-    ): UpdateTicket {
+  /// create an AllowUpdatesTicket
+  /// @param battle_pass_id: the id of the battle pass this ticket is for
+  public fun create_allow_updates_ticket(
+    _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
+    ): AllowUpdatesTicket {
 
-      UpdateTicket { 
-        id: object::new(ctx), 
-        battle_pass_id, 
-        new_level, 
-        new_xp, 
-        new_xp_to_next_level 
-      }
+    AllowUpdatesTicket {
+      id: object::new(ctx),
+      battle_pass_id,
+    }
+  }
+
+// === Unlock updates ===
+
+  /// the user's custodial wallet will call this function to unlock updates for their battle pass
+  public fun unlock_updates(battle_pass: &mut BattlePass, allow_updates_ticket: AllowUpdatesTicket){
+
+      // make sure allow_updates_ticket is for this battle pass
+      assert!(allow_updates_ticket.battle_pass_id == object::uid_to_inner(&battle_pass.id), EWrongTicket);
+      
+      // set in_game to true
+      battle_pass.in_game = true;
+
+      // delete allow_updates_ticket
+      let AllowUpdatesTicket { id: allow_updates_ticket_id, battle_pass_id: _ } = allow_updates_ticket;
+      object::delete(allow_updates_ticket_id);
   }
 
   // === Update battle pass ===
 
-  /// a battle pass holder will call this function to update the battle pass
-  /// aborts if update_ticket.battle_pass_id != id of Battle Pass
-  public fun update_battle_pass(
-    battle_pass: &mut BattlePass, update_ticket: UpdateTicket
-    ){
-      // make sure that update ticket is for this battle pass
-      let battle_pass_id = object::uid_to_inner(&battle_pass.id);
-      assert!(battle_pass_id == update_ticket.battle_pass_id, EUpdateNotPossible);
+  /// update battle pass level, xp, xp_to_next_level
+  /// aborts when in_game is false (battle pass is not in-game)
+  public fun update(battle_pass: &mut BattlePass, new_level: u64, new_xp: u64, new_xp_to_next_level: u64){
+    // make sure the battle_pass is in-game
+    assert!(battle_pass.in_game, ECannotUpdate);
 
-      battle_pass.level = update_ticket.new_level;
-      battle_pass.xp = update_ticket.new_xp;
-      battle_pass.xp_to_next_level = update_ticket.new_xp_to_next_level;
+    // make sure new_level is not greater than level_cap
+    assert!(new_level < battle_pass.level_cap, ELevelGreaterOrEqualThanLevelCap);
 
-
-      // delete the update ticket so that it cannot be re-used
-      let UpdateTicket { id: update_ticket_id, battle_pass_id: _, new_level: _, new_xp: _, new_xp_to_next_level: _}  = update_ticket;
-      object::delete(update_ticket_id)
+    battle_pass.level = new_level;
+    battle_pass.xp = new_xp;
+    battle_pass.xp_to_next_level = new_xp_to_next_level;
   }
+
 
   // === exports ===
 
@@ -257,8 +264,23 @@ module bushi::battle_pass{
     // check if OB kiosk
     ob_kiosk::assert_is_ob_kiosk(player_kiosk);
 
+    // set in_game to false
+    battle_pass.in_game = false;
+
     // deposit the battle pass into the kiosk.
     ob_kiosk::deposit(player_kiosk, battle_pass, ctx);
+  }
+
+  /// lock in-game updates
+  // this can be called by the player's custodial wallet before transferring - if the export_to_kiosk function is not called
+  // if it is not in-game, this function will do nothing 
+  public fun lock_updates(
+    battle_pass: &mut BattlePass
+    ) {
+
+    // set in_game to false
+    battle_pass.in_game = false;
+
   }
 
   // === private-helpers ===
@@ -332,6 +354,11 @@ module bushi::battle_pass{
   #[test_only]
   public fun season(battle_pass: &BattlePass): u64 {
     battle_pass.season
+  }
+
+  #[test_only]
+  public fun in_game(battle_pass: &BattlePass): bool {
+    battle_pass.in_game
   }
 
 }

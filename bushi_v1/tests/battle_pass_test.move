@@ -9,7 +9,7 @@ module bushi::battle_pass_test{
   
   use nft_protocol::mint_cap::MintCap;
 
-  use bushi::battle_pass::{BattlePass, Self, UpdateTicket, EUpdateNotPossible};
+  use bushi::battle_pass::{BattlePass, Self, AllowUpdatesTicket, ELevelGreaterOrEqualThanLevelCap, ECannotUpdate, EWrongTicket};
 
   // errors
   const EIncorrectDescription: u64 = 0;
@@ -26,6 +26,7 @@ module bushi::battle_pass_test{
   const USER: address = @0x2;
   const USER_1: address = @0x3;
   const USER_2: address = @0x4;
+  const USER_NON_CUSTODIAL: address = @0x5;
 
   // const values
   const SAMPLE_DESCRIPTION_BYTES: vector<u8> = b"Play Bushi to earn in-game assets using this battle pass";
@@ -103,62 +104,173 @@ module bushi::battle_pass_test{
     let battle_pass_id = battle_pass::id(&battle_pass);
     transfer::public_transfer(battle_pass, USER);
 
-    // next transaction by admin to create an update ticket for the user's battle pass and transfer it to the USER
+    // next transaction by admin to issue an allow updates ticket for the battle pass of user
     test_scenario::next_tx(scenario, ADMIN);
-    // `new_level` = 2, new_xp = 300, new_xp_to_next_level = 2000
-    let update_ticket = create_update_ticket(ADMIN, battle_pass_id, 2, 300, 2000, scenario);
-    transfer::public_transfer(update_ticket, USER);
+    let allow_updates_ticket = create_allow_updates_ticket(battle_pass_id, scenario);
+    transfer::public_transfer(allow_updates_ticket, USER);
+
+    // next transaction by user to unlock updates for their battle pass
+    test_scenario::next_tx(scenario, USER);
+    unlock_updates(USER, scenario);
+    
 
     // next transaction by user to update their battle pass
     test_scenario::next_tx(scenario, USER);
-    update_battle_pass(USER, scenario);
+    // make sure first that the allow updates ticket is burned
+    assert!(!test_scenario::has_most_recent_for_address<AllowUpdatesTicket>(USER), EObjectShouldHaveNotBeenFound);
+    // new_level = 1, new_xp = 400, new_xp_to_next_level: 600
+    update_battle_pass(USER, 1, 400, 600, scenario);
 
-    // next transaction by user to make sure that 
-    // 1. the Battle Pass is updated properly
-    // 2. the update ticket is burned
+    // next transaction by user to ensure battle pass fields are updated properly
     test_scenario::next_tx(scenario, USER);
-    ensure_battle_pass_updated_properly(2, 300, 2000, USER, scenario);
-    assert!(!test_scenario::has_most_recent_for_address<UpdateTicket>(USER), EObjectShouldHaveNotBeenFound);
+    ensure_battle_pass_updated_properly(1, 400, 600, USER, scenario);
 
     test_scenario::end(scenario_val);
   }
 
   #[test]
-  #[expected_failure(abort_code = EUpdateNotPossible)]
-  fun test_update_with_wrong_ticket() {
+  #[expected_failure(abort_code = EWrongTicket)]
+  fun test_unlock_with_wrong_ticket() {
 
-    // module is initialized by admin
+    // test is initialized by admin
     let scenario_val = test_scenario::begin(ADMIN);
     let scenario = &mut scenario_val;
+    // init module
     battle_pass::init_test(test_scenario::ctx(scenario));
 
-    // next transaction by admin to create a battle pass and send in to user1
+    // next transaction by admin to mint a battle pass and send it to user1
     test_scenario::next_tx(scenario, ADMIN);
     let battle_pass_1 = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
-    // keep the id of the battle pass to create update ticket later
+    // keep the id of the battle pass 1 for later
     let battle_pass_1_id = battle_pass::id(&battle_pass_1);
     transfer::public_transfer(battle_pass_1, USER_1);
 
-    // next transaction by admin to create an update ticket for battle pass of user1
-    test_scenario::next_tx(scenario, ADMIN);
-    // new_level = 1, new_xp = 400, new_xp_to_next_level: 600
-    let update_ticket = create_update_ticket(ADMIN, battle_pass_1_id, 1, 400, 1000, scenario);
-    transfer::public_transfer(update_ticket, USER_1);
-
-    // next transaction by admin to create a battle pass for user2
+    // next transaction by admin to mint a battle pass and send it to user2
     test_scenario::next_tx(scenario, ADMIN);
     let battle_pass_2 = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
     transfer::public_transfer(battle_pass_2, USER_2);
 
-    // next transaction by user1 that sends their update ticket to user2
+    // next transaction by admin to create an allow updates ticket for the battle pass of user1
+    test_scenario::next_tx(scenario, ADMIN);
+    let allow_updates_ticket = create_allow_updates_ticket(battle_pass_1_id, scenario);
+    // admin transfers allow updates ticket to user1
+    transfer::public_transfer(allow_updates_ticket, USER_1);
+
+    // next transaction by user1 that sends their allow updates ticket to user2
     test_scenario::next_tx(scenario, USER_1);
-    let update_ticket = test_scenario::take_from_address<UpdateTicket>(scenario, USER_1);
-    transfer::public_transfer(update_ticket, USER_2);
+    let allow_updates_ticket = test_scenario::take_from_address<AllowUpdatesTicket>(scenario, USER_1);
+    transfer::public_transfer(allow_updates_ticket, USER_2);
 
-    // next transaction by user2 that tries to update their battle pass with the ticket of user1
+    // next transaction by user2 to try and unlock their battle pass with the unlock ticket of user1
     test_scenario::next_tx(scenario, USER_2);
-    update_battle_pass(USER_2, scenario);
+    unlock_updates(USER_2, scenario);
 
+    // end test
+    test_scenario::end(scenario_val);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = ECannotUpdate)]
+  fun test_update_when_locked() {
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to mint a battle pass and send it to user
+    test_scenario::next_tx(scenario, ADMIN);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
+    transfer::public_transfer(battle_pass, USER);
+
+    // next transaction by user that tries to update their battle pass
+    test_scenario::next_tx(scenario, USER);
+    update_battle_pass(USER, 1, 400, 600, scenario);
+
+    // end test
+    test_scenario::end(scenario_val);
+
+  }
+
+  #[test]
+  #[expected_failure(abort_code = ELevelGreaterOrEqualThanLevelCap)]
+  fun test_update_when_reached_level_cap() {
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to mint a battle pass and send it to user
+    test_scenario::next_tx(scenario, ADMIN);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
+    // keep the id of the battle pass to create update ticket later
+    let battle_pass_id = battle_pass::id(&battle_pass);
+    transfer::public_transfer(battle_pass, USER);
+
+    // next transaction by admin to issue an allow updates ticket for the battle pass of user
+    test_scenario::next_tx(scenario, ADMIN);
+    let allow_updates_ticket = create_allow_updates_ticket(battle_pass_id, scenario);
+    // admin transfers allow updates ticket to user
+    transfer::public_transfer(allow_updates_ticket, USER);
+
+    // next transaction by user to unlock updates for their battle pass
+    test_scenario::next_tx(scenario, USER);
+    unlock_updates(USER, scenario);
+
+    // next transaction by user to update their battle pass with level that is greater than level cap
+    test_scenario::next_tx(scenario, USER);
+    update_battle_pass(USER, 71, 0, 1000, scenario);
+
+    // end test
+    test_scenario::end(scenario_val);
+    
+  }
+
+  #[test]
+  #[expected_failure(abort_code = ECannotUpdate)]
+  fun test_lock() {
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to mint a battle pass
+    test_scenario::next_tx(scenario, ADMIN);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 70, 1000, 1, scenario);
+    // keep id of battle pass for allow updates ticket later
+    let battle_pass_id = battle_pass::id(&battle_pass);
+    // admin transfers battle pass to user
+    // assume user here is a custodial wallet
+    transfer::public_transfer(battle_pass, USER);
+
+    // next transaction by admin to create an allow updates ticket for the battle pass
+    test_scenario::next_tx(scenario, ADMIN);
+    let allow_updates_ticket = create_allow_updates_ticket(battle_pass_id, scenario);
+    // admin transfers allow updates ticket to user
+    transfer::public_transfer(allow_updates_ticket, USER);
+
+    // next transaction by user's custodial wallet to unlock updates for their battle pass
+    test_scenario::next_tx(scenario, USER);
+    unlock_updates(USER, scenario);
+
+    // next transaction by user's custodial wallet to lock updates for their battle pass
+    test_scenario::next_tx(scenario, USER);
+    // lock_updates(USER, scenario);
+    let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, USER);
+    battle_pass::lock_updates(&mut battle_pass);
+    // transfer battle pass to user's non-custodial
+    transfer::public_transfer(battle_pass, USER_NON_CUSTODIAL);
+
+    // next transaction by non-custodial to try and update the battle pass
+    test_scenario::next_tx(scenario, USER_NON_CUSTODIAL);
+    update_battle_pass(USER_NON_CUSTODIAL, 71, 0, 1000, scenario);
+
+    // end test
     test_scenario::end(scenario_val);
   }
 
@@ -192,19 +304,24 @@ module bushi::battle_pass_test{
     test_scenario::return_to_address(user, battle_pass);
   }
 
-  // create an update ticket
-  fun create_update_ticket(admin: address, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, scenario: &mut Scenario): UpdateTicket{
-    let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let update_ticket = battle_pass::create_update_ticket(&mint_cap, battle_pass_id, new_level, new_xp, new_xp_to_next_level, test_scenario::ctx(scenario));
-    test_scenario::return_to_address(admin, mint_cap);
-    update_ticket
+  fun create_allow_updates_ticket(battle_pass_id: ID, scenario: &mut Scenario): AllowUpdatesTicket{
+  let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, ADMIN);
+  let allow_updates_ticket = battle_pass::create_allow_updates_ticket(&mint_cap, battle_pass_id, test_scenario::ctx(scenario));
+  test_scenario::return_to_address(ADMIN, mint_cap);
+  allow_updates_ticket
   }
 
-  /// update the last battle pass user has received using the last ticket they have received
-  fun update_battle_pass(user: address, scenario: &mut Scenario){
+  fun unlock_updates(user: address, scenario: &mut Scenario){
+  let allow_updates_ticket = test_scenario::take_from_address<AllowUpdatesTicket>(scenario, user);
+  let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
+  battle_pass::unlock_updates(&mut battle_pass, allow_updates_ticket);
+  test_scenario::return_to_address(user, battle_pass);
+  }
+
+  /// update the last battle pass user has received
+  fun update_battle_pass(user: address, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
-    let update_ticket = test_scenario::take_from_address<UpdateTicket>(scenario, user);
-    battle_pass::update_battle_pass(&mut battle_pass, update_ticket);
+    battle_pass::update(&mut battle_pass, new_level, new_xp, new_xp_to_next_level);
     test_scenario::return_to_address(user, battle_pass);
   }
 
