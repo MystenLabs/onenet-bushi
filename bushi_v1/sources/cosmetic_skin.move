@@ -33,7 +33,7 @@ module bushi::cosmetic_skin {
   use ob_utils::utils;
 
   /// errors
-  const EWrongTicket: u64 = 0;
+  const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
   const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
 
@@ -71,9 +71,9 @@ module bushi::cosmetic_skin {
     in_game: bool,
   }
 
-  /// ticket to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+  /// token to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
   /// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
-  struct AllowUpdatesTicket has key, store {
+  struct InGameToken has key, store {
     id: UID,
     cosmetic_skin_id: ID,
   }
@@ -174,15 +174,15 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  // === Allow updates ticket ====
+  // === In-game token ====
 
-  /// create an AllowUpdatesTicket
-  /// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is for
-  public fun create_allow_updates_ticket(
+  /// create an InGameToken
+  /// @param cosmetic_skin_id: the id of the cosmetic skin this token is for
+  public fun create_in_game_token(
     _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, ctx: &mut TxContext
-    ): AllowUpdatesTicket {
+    ): InGameToken {
 
-    AllowUpdatesTicket {
+    InGameToken {
       id: object::new(ctx),
       cosmetic_skin_id
     }
@@ -191,17 +191,17 @@ module bushi::cosmetic_skin {
   // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
-  public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, allow_updates_ticket: AllowUpdatesTicket){
+  public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, in_game_token: InGameToken){
 
-      // make sure allow_updates_ticket is for this cosmetic skin
-      assert!(allow_updates_ticket.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EWrongTicket);
+      // make sure in_game_token is for this cosmetic skin
+      assert!(in_game_token.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EWrongToken);
       
       // set in_game to true
       cosmetic_skin.in_game = true;
 
-      // delete allow_updates_ticket
-      let AllowUpdatesTicket { id: allow_updates_ticket_id, cosmetic_skin_id: _ } = allow_updates_ticket;
-      object::delete(allow_updates_ticket_id);
+      // delete in_game_token
+      let InGameToken { id: in_game_token_id, cosmetic_skin_id: _ } = in_game_token;
+      object::delete(in_game_token_id);
   }
 
   // === Update cosmetic skin level ===

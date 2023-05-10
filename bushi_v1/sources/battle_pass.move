@@ -34,7 +34,7 @@ module bushi::battle_pass{
 
 
   /// errors
-  const EWrongTicket: u64 = 0;
+  const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
   const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
 
@@ -76,9 +76,9 @@ module bushi::battle_pass{
     in_game: bool,
   }
 
-  /// ticket to allow mutation of the fields of the the battle pass when battle pass is in-game
+  /// token to allow mutation of the fields of the the battle pass when battle pass is in-game
   /// should be created and be used after the battle pass is transferred to the custodial wallet of the player
-  struct AllowUpdatesTicket has key, store {
+  struct InGameToken has key, store {
     id: UID,
     battle_pass_id: ID,
   }
@@ -208,15 +208,15 @@ module bushi::battle_pass{
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
-  // === Allow updates ticket ====
+  // === In-game token ====
 
-  /// create an AllowUpdatesTicket
-  /// @param battle_pass_id: the id of the battle pass this ticket is for
-  public fun create_allow_updates_ticket(
+  /// create an InGameToken
+  /// @param battle_pass_id: the id of the battle pass this token is for
+  public fun create_in_game_token(
     _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
-    ): AllowUpdatesTicket {
+    ): InGameToken {
 
-    AllowUpdatesTicket {
+    InGameToken {
       id: object::new(ctx),
       battle_pass_id,
     }
@@ -225,17 +225,17 @@ module bushi::battle_pass{
 // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their battle pass
-  public fun unlock_updates(battle_pass: &mut BattlePass, allow_updates_ticket: AllowUpdatesTicket){
+  public fun unlock_updates(battle_pass: &mut BattlePass, in_game_token: InGameToken){
 
-      // make sure allow_updates_ticket is for this battle pass
-      assert!(allow_updates_ticket.battle_pass_id == object::uid_to_inner(&battle_pass.id), EWrongTicket);
+      // make sure in_game_token is for this battle pass
+      assert!(in_game_token.battle_pass_id == object::uid_to_inner(&battle_pass.id), EWrongToken);
       
       // set in_game to true
       battle_pass.in_game = true;
 
-      // delete allow_updates_ticket
-      let AllowUpdatesTicket { id: allow_updates_ticket_id, battle_pass_id: _ } = allow_updates_ticket;
-      object::delete(allow_updates_ticket_id);
+      // delete in_game_token
+      let InGameToken { id: in_game_token_id, battle_pass_id: _ } = in_game_token;
+      object::delete(in_game_token_id);
   }
 
   // === Update battle pass ===
