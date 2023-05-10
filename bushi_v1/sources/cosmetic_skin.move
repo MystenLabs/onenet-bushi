@@ -32,8 +32,10 @@ module bushi::cosmetic_skin {
 
   use ob_utils::utils;
 
-  // error for when update of cosmetic skin not possible
-  const EUpdateNotPossible: u64 = 0;
+  /// errors
+  const EWrongToken: u64 = 0;
+  const ECannotUpdate: u64 = 1;
+  const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -66,13 +68,14 @@ module bushi::cosmetic_skin {
     img_url: Url,
     level: u64,
     level_cap: u64,
+    in_game: bool,
   }
 
-  /// update ticket to update the cosmetic skin
-  struct UpdateTicket has key, store {
+  /// token to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+  /// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
+  struct InGameToken has key, store {
     id: UID,
     cosmetic_skin_id: ID,
-    new_level: u64,
   }
 
   fun init(otw: COSMETIC_SKIN, ctx: &mut TxContext){
@@ -137,6 +140,7 @@ module bushi::cosmetic_skin {
   }
 
   /// mint a cosmetic skin
+  /// by default in_game = false
   public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
     let cosmetic_skin = CosmeticSkin {
@@ -146,6 +150,7 @@ module bushi::cosmetic_skin {
       img_url: url::new_unsafe_from_bytes(img_url_bytes),
       level,
       level_cap,
+      in_game: false,
     };
 
     // emit a mint event
@@ -169,32 +174,51 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  /// create a cosmetic skin update ticket
-  public fun create_update_ticket(
-    _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext
-    ): UpdateTicket {
+  // === In-game token ====
 
-    UpdateTicket {
+  /// create an InGameToken
+  /// @param cosmetic_skin_id: the id of the cosmetic skin this token is issued for
+  public fun create_in_game_token(
+    _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, ctx: &mut TxContext
+    ): InGameToken {
+
+    InGameToken {
       id: object::new(ctx),
-      cosmetic_skin_id,
-      new_level,
+      cosmetic_skin_id
     }
   }
 
-  /// the user will call this function to update their cosmetic skin
-  public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket){
+  // === Unlock updates ===
 
-      // make sure update ticket is for this cosmetic skin
-      assert!(update_ticket.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EUpdateNotPossible);
+  /// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
+  /// aborts if the in_game_token is not issued for this cosmetic skin
+  public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, in_game_token: InGameToken){
+
+      // make sure in_game_token is for this cosmetic skin
+      assert!(in_game_token.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EWrongToken);
       
-      // update cosmetic skin level
-      cosmetic_skin.level = update_ticket.new_level;
+      // set in_game to true
+      cosmetic_skin.in_game = true;
 
-      // delete update ticket
-      let UpdateTicket { id: update_ticket_id, cosmetic_skin_id: _, new_level: _ } = update_ticket;
-      object::delete(update_ticket_id);
+      // delete in_game_token
+      let InGameToken { id: in_game_token_id, cosmetic_skin_id: _ } = in_game_token;
+      object::delete(in_game_token_id);
   }
 
+  // === Update cosmetic skin level ===
+
+  /// update cosmetic skin level
+  /// aborts when in_game is false (cosmetic skin is not in-game)
+  /// or when the new_level > level_cap
+  public fun update(cosmetic_skin: &mut CosmeticSkin, new_level: u64){
+    // make sure the cosmetic skin is in-game
+    assert!(cosmetic_skin.in_game, ECannotUpdate);
+
+    // make sure the new level is not greater than the level cap
+    assert!(new_level <= cosmetic_skin.level_cap, ELevelGreaterOrEqualThanLevelCap);
+
+    cosmetic_skin.level = new_level;
+  }
   // === exports ===
 
   /// export the cosmetic skin to a player's kiosk
@@ -204,8 +228,23 @@ module bushi::cosmetic_skin {
     // check if OB kiosk
     ob_kiosk::assert_is_ob_kiosk(player_kiosk);
 
+    // set in_game to false
+    cosmetic_skin.in_game = false;
+
     // deposit the cosmetic skin into the kiosk.
     ob_kiosk::deposit(player_kiosk, cosmetic_skin, ctx);
+  }
+
+  /// lock in-game updates
+  // this can be called by the player's custodial wallet before transferring - if the export_to_kiosk function is not called
+  // if it is not in-game, this function will do nothing 
+  public fun lock_updates(
+    cosmetic_skin: &mut CosmeticSkin
+    ) {
+
+    // set in_game to false
+    cosmetic_skin.in_game = false;
+
   }
 
   // === private-helpers ===
@@ -232,7 +271,7 @@ module bushi::cosmetic_skin {
   }
 
   #[test_only]
-  public fun test_init(ctx: &mut TxContext){
+  public fun init_test(ctx: &mut TxContext){
       let otw = COSMETIC_SKIN {};
       init(otw, ctx);
   }
@@ -265,5 +304,10 @@ module bushi::cosmetic_skin {
   #[test_only]
   public fun level_cap(cosmetic_skin: &CosmeticSkin): u64 {
     cosmetic_skin.level_cap
+  }
+
+  #[test_only]
+  public fun in_game(cosmetic_skin: &CosmeticSkin): bool {
+    cosmetic_skin.in_game
   }
 }
