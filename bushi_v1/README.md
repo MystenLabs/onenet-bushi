@@ -9,16 +9,15 @@ The `bushi` smart contracts package contains two modules, `battle_pass` and `cos
 The `battle_pass` module provides the functionality to create battle pass objects and update them depending on the progress of the player.
 
 The entity that will publish the package will receive a capability of type `MintCap<BattlePass>` that gives them the permission to:
-- Mint battle pass NFTs.
-- Give permission to the player to update the level, xp and xp to next level of their battle pass NFT.
+- mint battle pass NFTs, and
+- allow the owner of a battle pass to alter the value of its level, xp, and xp to next level.
 
-In order for a player's progress in the battle pass to be recorded on-chain:
-- The entity owning the `MintCap<BattlePass>` should create an `UpdateTicket` object that contains the updated values for the level, xp and xp to next level for that player, and it should transfer the `UpgradeTicket` object to the player.
-- The player's custodial wallet will then call the `update_battle_pass` function in order for their battle pass level, xp, and xp to next level to be updated with the new values.
+Once a battle pass is transferred to a custodial wallet,
+- the entity owning the `MintCap<BattlePass>` should create an `InGameToken` object for that battle pass that will allow the level, xp and xp to next level fields of the battle pass to be updated, and it should transfer the `InGameToken` object to address of the custodial wallet.
+- The player's custodial wallet will then call the `unlock_updates` function to allow updates to the aforementioned battle pass fields. The `InGameToken` is burned after calling the function, and thus preventing re-usage of the token.
 ### `BattlePass` object & minting
 
 #### The `BattlePass` object
-<!-- Every player will own a `BattlePass` object. -->
 The `BattlePass` object struct is defined as follows.
 ```
 /// Battle pass struct
@@ -32,15 +31,45 @@ struct BattlePass has key, store{
   xp: u64,
   xp_to_next_level: u64,
   season: u64,
+  in_game: bool,
 }
 ```
 A battle pass can be minted only by the address that published the package, see below.
 
-<!-- ### `BattlePass` Display -->
+#### `BattlePass` Display
+
+The display properties of the `BattlePass` object are set upon initalizing the module, and can be altered using the `publisher` object. The `Display<BattlePass>` fields are set as follows.
+```
+let fields = vector[
+  utf8(b"name"),
+  utf8(b"description"),
+  utf8(b"img_url"),
+  utf8(b"level"),
+  utf8(b"level_cap"),
+  utf8(b"xp"),
+  utf8(b"xp_to_next_level"),
+  utf8(b"season"),
+];
+let values = vector[
+  utf8(b"Battle Pass"),
+  utf8(b"{description}"),
+  // img_url can also be something like `utf8(b"bushi.com/{img_url})"` or `utf8(b"ipfs/{img_url})` to save on space
+  utf8(b"{img_url}"),
+  utf8(b"{level}"),
+  utf8(b"{level_cap}"),
+  utf8(b"{xp}"),
+  utf8(b"{xp_to_next_level}"),
+  utf8(b"{season}"),
+];
+display::add_multiple<BattlePass>(display, fields, values);
+```
+Note that the `in_game` field of the `BattlePass` object is not included in display.
 
 #### Minting a Battle Pass
 In order to mint a battle pass, a capability `MintCap<BattlePass>` is required. This capability will be sent to the address that published the package automatically via the `init` function.
-There are 2 functions available for minting.
+
+The following functions are available for minting.
+In all those functions, the `in_game` field of the `BattlePass` is set to `false` by default.
 
 ##### Function `mint`
 Function `mint` takes as input the minting capability and values for the fields of the `BattlePass` object (apart from `id` which is set automatically) and returns an object of type `BattlePass`. Using programmable transactions, the object can then be passed as input to another function (for example in a transfer function).
@@ -53,62 +82,72 @@ public fun mint(
 ```
 
 ##### Function `mint_default`
-Function `mint_default` returns a `BattlePass` object whose level is set to 1 and xp is set to 0. It requires as input only the minting capability and the url of the battle pass.
+Function `mint_default` returns an object of type `BattlePass` whose level is set to 1 and xp is set to 0.
 ```
 public fun mint_default(
   mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
   ): BattlePass
 ```
 
-### Updating a Battle Pass
-In order for the battle pass to be updated with the progress of the player, an object of type `UpdateTicket` should be mint by the entity that published the package and sent to the player. Then, the player can call the `update_battle_pass` function to update the status of their battle pass.
-
-#### The `UpdateTicket` object
-The `UpdateTicket` object is defined as follows
+### Allowing updates to a battle pass
+Once a battle pass is transferred to a user's custodial wallet, the owner of `MintCap<BattlePass>` can create an `InGameToken` and transfer it to the user's custodial wallet. Then the user's custodial wallet can call the `unlock_updates` function to set the `in_game` field of the `BattlePass` object to `true` and allow calling the `update_battle_pass` function.
+#### The `InGameToken` object
 ```
-/// Update ticket struct
-struct UpdateTicket has key, store {
+/// token to allow mutation of the fields of the the battle pass when battle pass is in-game
+/// should be created and be used after the battle pass is transferred to the custodial wallet of the player
+struct InGameToken has key, store {
   id: UID,
-  // ID of the battle pass that this ticket can update
   battle_pass_id: ID,
-  // new level of battle pass
-  new_level: u64,
-  // new xp of battle pass
-  new_xp: u64,
-  // new xp to next level of battle pass
-  new_xp_to_next_level: u64,
 }
-``` 
-where 
-- `id` is the id of the `UpdateTicket` object (unique per ticket)
-- `battle_pass_id` is the id of the battle pass that this ticket is issued for
-- `new_xp`, `new_level` and `new_xp_to_next_level` are the values the `xp`, `level` and `xp_to_next_level` fields of the battle pass resp. that it should have after the update.
-
-#### Creating an Update Ticket
-The function `create_update_ticket` allows the creation of an `UpdateTicket` object, and requires the `MintCap<BattlePass>` to ensure that only an authorized entity can create one.
-
-##### Function `create_update_ticket`
-Function `create_update_ticket` creates and returns an `UpdateTicket` object.
-```
-/// to create an update ticket the mint cap is needed
-/// this means the entity that can mint a battle pass can also issue a ticket to update it
-/// but the function can be altered so that the two are separate entities
-public fun create_update_ticket(
-  _: &MintCap<BattlePass>, battle_pass_id: ID, new_level: u64, new_xp: u64, new_xp_to_next_level: u64, ctx: &mut TxContext
-  ): UpdateTicket
 ```
 
-#### Updating the Battle Pass
-After an update ticket is created and sent to the battle pass owner, the battle pass owner should call the function `update_battle_pass` in order to update the `level` ,`xp` and `xp_to_next_level` fields of their battle pass, giving as input the update ticket and a mutable reference of their battle pass.
-The `update_battle_pass` function aborts if the `id` field of the battle pass does not match the `battle_pass_id` field of the update ticket and thus preventing the update of a player's battle pass with the progress of another player.
-Furthermore, after the update is completed the update ticket is destroyed inside the function, in order to prevent re-using it in the future and also for storage optimization.
- ```
-/// a battle pass holder will call this function to update the battle pass
-/// aborts if update_ticket.battle_pass_id != id of battle pass
-public fun update_battle_pass(
-  battle_pass: &mut BattlePass, update_ticket: UpdateTicket
+#### Creating an `InGameToken`
+The function `create_in_game_token` creates and returns an `InGameToken` object, and requires the `MintCap<BattlePass>` to ensure that only an authorized entity can create one. It also requires as input the id of the battle pass object the token is issued for.
+
+##### Function `create_in_game_token`
+Function `create_in_game_token` creates and returns an `InGameToken` object.
+```
+/// create an InGameToken
+/// @param battle_pass_id: the id of the battle pass this token is for
+public fun create_in_game_token(
+  _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
+  ): InGameToken
+```
+
+##### Function `unlock_updates`
+Function `unlock_updates` will be called by the user's custodial wallet and sets the `in_game` field of the battle pass to `true`.
+
+The function aborts if the `in_game_token` is not issued for the battle pass of the user.
+
+The `in_game_token` is burned inside the function in order to prevent re-usage of the token.
+
+```
+/// the user's custodial wallet will call this function to unlock updates for their battle pass
+public fun unlock_updates(battle_pass: &mut BattlePass, in_game_token: InGameToken)
+```
+
+#### Updating the Battle Pass fields
+After the `in_game` field of the battle pass is set to `true`, the custodial wallet of the player can call the function `update_battle_pass` in order to update the `level` ,`xp` and `xp_to_next_level` fields of their battle pass, giving as input a mutable reference of the battle pass.
+The `update_battle_pass` function aborts if
+- `battle_pass.in_game` is `false`, or
+- `new_level` is greater or equal than `battle_pass.level_cap`
+```
+// update battle pass level, xp, xp_to_next_level
+/// aborts when in_game is false (battle pass is not in-game)
+/// or when new_level > level_cap
+public fun update(battle_pass: &mut BattlePass, new_level: u64, new_xp: u64, new_xp_to_next_level: u64)
+```
+
+### Locking updates
+Before a battle pass is exported to a non-custodial wallet or a kiosk, the custodial wallet of a player should call the `lock_updates` function to set the `in_game` field of the battle pass to `false`, in order to prevent the fields of the battle pass being altered after it is exported.
+
+```
+/// lock in-game updates
+// this should be called by the player's custodial wallet before transferring
+public fun lock_updates(
+  battle_pass: &mut BattlePass
   )
-  ```
+```
 
 ### OriginByte NFT standards support
 - `init` function
@@ -151,22 +190,22 @@ public fun export_to_kiosk(
   battle_pass: BattlePass, player_kiosk: &mut Kiosk, ctx: &mut TxContext
   )
 ```
+Note: function `export_to_kiosk` sets `in_game` to false before exporting.
 
 ### Tests
-The module `battle_pass_test` contains tests for the `battle_pass` module. The tests performed are the following.
-- `fun test_mint_default()`, which tests that the `mint_default` function sets fields of the battle pass it creates as intended
-- `fun test_mint()`, which tests that the `mint` function sets the fields of the battle pass it creates as intended
-- `fun test_update()`, which tests whether after minting a battle pass and issuing an update ticket the fields of the battle pass are updated as intended, and that the update ticket is destroyed after the function has finished executing.
-- `fun test_update_with_wrong_ticket()`, which has `#[expected_failure(abort_code = EUpdateNotPossible)]` and tests that the `update_battle_pass` aborts when is given as input a battle pass and an update ticket that is not created for that battle pass.
+The module `battle_pass_test` contains tests for the `battle_pass` module. The tests included are the following.
+- `test_mint_default`, which tests that the `mint_default` function sets fields of the battle pass it creates as intended
+- `test_mint`, which tests that the `mint` function sets the fields of the battle pass it creates as intended
+- `test_unlock_with_wrong_ticket` (has expected failure) tests whether we can unlock a battle pass with an unlock ticket that is not issued for that battle pass
+- `test_update_when_locked` (has expected failure) tests whether we can update the level of a battle pass when `in_game` is `false.
+- `test_update` tests whether a battle pass is updated as intended.
+- `test_update_when_reached_level_cap` (has expected failure) tests whether we can update the level of a battle pass with a value greater than `level_cap`.
+- `test_lock` tests whether we can update the level of a battle pass after `lock_updates` has been called.
 
 
 ## The `cosmetic_skins` module
-The `cosmetic_skins` module provides the functionality to create cosmetic skins and update their level.
-Similarly to the `battle_pass` module, the entity that will publish the package will receive a capability of type `MintCap<CosmeticSkin>` that is necessary in order to mint cosmetic skins and give permission to users to update them.
-
-In order for the level of a cosmetic skin of a player to be updated:
-- The entity that holds the `MintCap<BattlePass>` capability should issue an `UpdateTicket` object and transfer it to the player.
-- The player will then call the `update_cosmetic_skin` function to update the level of their cosmetic skin.
+The `cosmetic_skins` module provides the functionality to create cosmetic skins and update their level. The flow is similar to that of the `battle_pass` module.
+Similarly to the `battle_pass` module, the entity that will publish the package will receive a capability of type `MintCap<CosmeticSkin>` that is necessary in order to mint cosmetic skins and allow the owner of the cosmetic skin to alter the value of its level.
 
 ### `CosmeticSkin` object & minting
 
@@ -181,52 +220,63 @@ struct CosmeticSkin has key, store {
   img_url: Url,
   level: u64,
   level_cap: u64,
+  in_game: bool,
 }
 ```
 
 #### Minting a Cosmetic Skin
-In order to mint a cosmetic skin, a capability of type `MintCap<CosmeticSkin>` is required, which will be sent automatically to the entity that published the package. This ensures that only an authorized entity can mint a cosmetic skin.
 ##### Function `mint`
-Function `mint` is defined as follows.
 ```
+/// mint a cosmetic skin
+/// by default in_game = false
 public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin
 ```
-The function returns an object of type `CosmeticSkin` that will be handled using programmable transactions.
 
-### Updating a Cosmetic Skin
-The proccess of updating a cosmetic skin is similar to that of updating a battle pass.
-- The entity possessing the `MintCap<UpdateTicket>` will create an update ticket for the cosmetic skin using the `create_update_ticket` function.
-- The player owning the cosmetic skin object will call the `update_cosmetic_skin` function to update their cosmetic skin.
-
-#### The `UpdateTicket` object
-The `UpdateTicket` object is defined as follows.
+### Allowing updates to a cosmetic skin
+##### Struct `InGameToken`
 ```
-// update ticket to update the cosmetic skin
-struct UpdateTicket has key, store {
+/// token to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+/// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
+struct InGameToken has key, store {
   id: UID,
   cosmetic_skin_id: ID,
-  new_level: u64,
 }
 ```
-where
-- `id` is unique per cosmetic skin and set automatically
-- `cosmetic_skin_id` is the `ID` of the cosmetic skin the update ticket corresponds to
-- `new_level` is the level the cosmetic skin should have after the update.
 
-#### Function `create_update_ticket`
-The function `create_update_ticket` is defined as follows.
-```
-// create a cosmetic skin update ticket
-public fun create_update_ticket(_: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, new_level: u64, ctx: &mut TxContext): UpdateTicket
-```
-In order to call this function, the capability `MintCap<UpdateTicket>` is needed, to ensure that only an authorized entity can give the permission to a player to update their cosmetic skin.
-The function returns an update ticket that should be handled using programmable transactions (for example transferred to the player whose cosmetic skin can be updated).
 
-#### Function `update_cosmetic_skin`
-The function `update_cosmetic_skin` takes as input a mutable reference to a cosmetic skin and an update ticket for that cosmetic skin and updates the level field of the cosmetic skin. Once called, the update ticket is destroyed inside the function to ensure that the update ticket cannot be re-used.
+##### Function `create_in_game_token`
 ```
-// the user will call this function to update their cosmetic skin
-public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, update_ticket: UpdateTicket)
+ /// create an InGameToken
+/// @param cosmetic_skin_id: the id of the cosmetic skin this token is issued for
+public fun create_in_game_token(
+  _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, ctx: &mut TxContext
+  ): InGameToken 
+```
+
+
+##### Function `unlock_updates`
+```
+/// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
+/// aborts if the in_game_token is not issued for this cosmetic skin
+public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, in_game_token: InGameToken)
+```
+
+
+#### Updating the cosmetic skin level
+##### Function `update`
+```
+/// update cosmetic skin level
+/// aborts when in_game is false (cosmetic skin is not in-game)
+/// or when the new_level > level_cap
+public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, new_level: u64)
+```
+
+### Locking updates
+##### Function `lock`
+```
+/// lock in-game updates
+// this should be called by the player's custodial wallet before transferring
+public fun lock_updates
 ```
 
 ### OriginByte NFT standards
@@ -263,7 +313,9 @@ public fun export_to_kiosk(
 ```
 
 ### Tests
-The module `cosmetic_skins_test` contains tests for the `cosmetic_skins` module. The tests performed are the following.
-- `fun test_mint()`, which tests that the `mint` function sets the fields of the cosmetic skin it has created as intended
-- `fun test_update()`, which tests that after minting a cosmetic skin and issuing an update ticket the cosmetic skin is updated as intended, and that the update ticket is destroyed after the function has finished executing.
-- `fun test_update_with_wrong_ticket()`, which has `#[expected_failure(abort_code = EUpdateNotPossible)]` and tests that the `update_cosmetic_skin` aborts when is given as input a cosmetic skin and an update ticket that is not created for that cosmetic skin.
+The module `cosmetic_skins_test` contains tests for the `cosmetic_skins` module. The tests included are the following.
+- `test_unlock_with_wrong_ticket` (has expected failure) tests whether we can unlock a cosmetic skin with an unlock ticket that is not issued for that cosmetic skin
+`test_update_when_locked` (has expected failure) tests whether we can update the `level` of a cosmetic skin when in_game is `false`.
+`test_mint` and `test_update` test whether cosmetic skins are minted and updated with the intended values.
+`test_update_when_reached_level_cap` (has expected failure) tests whether we can update the `level` of a cosmetic skin with a value greater than `level_cap`.
+`test_lock` tests whether we can update the `level` of the cosmetic skin after `lock_updates` has been called.
