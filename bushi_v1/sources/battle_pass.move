@@ -211,7 +211,7 @@ module bushi::battle_pass{
   // === In-game token ====
 
   /// create an InGameToken
-  /// @param battle_pass_id: the id of the battle pass this token is for
+  /// @param battle_pass_id: the id of the battle pass this token is issued for
   public fun create_in_game_token(
     _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
     ): InGameToken {
@@ -222,9 +222,10 @@ module bushi::battle_pass{
     }
   }
 
-// === Unlock updates ===
+  // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their battle pass
+  /// aborts if the in_game_token is not issued for this battle pass
   public fun unlock_updates(battle_pass: &mut BattlePass, in_game_token: InGameToken){
 
       // make sure in_game_token is for this battle pass
@@ -273,8 +274,7 @@ module bushi::battle_pass{
   }
 
   /// lock in-game updates
-  // this can be called by the player's custodial wallet before transferring - if the export_to_kiosk function is not called
-  // if it is not in-game, this function will do nothing 
+  // this should be called by the player's custodial wallet before transferring
   public fun lock_updates(
     battle_pass: &mut BattlePass
     ) {

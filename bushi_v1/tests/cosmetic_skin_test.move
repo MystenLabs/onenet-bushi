@@ -85,7 +85,7 @@ module bushi::cosmetic_skin_test {
     // 2. update their cosmetic skin
     test_scenario::next_tx(scenario, USER);
     assert!(!test_scenario::has_most_recent_for_address<InGameToken>(USER), EObjectShouldHaveNotBeenFound);
-    update_cosmetic_skin(USER, 2, scenario);
+    update(USER, 2, scenario);
 
     // next transaction by user to make sure that
     // cosmetic skin is updated properly
@@ -155,7 +155,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by user that tries to update their cosmetic skin
     test_scenario::next_tx(scenario, USER);
-    update_cosmetic_skin(USER, 2, scenario);
+    update(USER, 2, scenario);
 
     // end test
     test_scenario::end(scenario_val);
@@ -191,7 +191,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by user to update their cosmetic skin with level that is greater than level cap
     test_scenario::next_tx(scenario, USER);
-    update_cosmetic_skin(USER, 4, scenario);
+    update(USER, 4, scenario);
 
     // end test
     test_scenario::end(scenario_val);
@@ -237,7 +237,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by non-custodial to try and update the cosmetic skin
     test_scenario::next_tx(scenario, USER_NON_CUSTODIAL);
-    update_cosmetic_skin(USER_NON_CUSTODIAL, 2, scenario);
+    update(USER_NON_CUSTODIAL, 2, scenario);
 
     // end test
     test_scenario::end(scenario_val);
@@ -266,9 +266,9 @@ module bushi::cosmetic_skin_test {
     test_scenario::return_to_address(user, cosmetic_skin);
   }
 
-  fun update_cosmetic_skin(user: address, new_level: u64, scenario: &mut Scenario){
+  fun update(user: address, new_level: u64, scenario: &mut Scenario){
     let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, user);
-    cosmetic_skin::update_cosmetic_skin(&mut cosmetic_skin, new_level);
+    cosmetic_skin::update(&mut cosmetic_skin, new_level);
     test_scenario::return_to_address(user, cosmetic_skin);
   }
 

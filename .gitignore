@@ -1,2 +1,4 @@
 build
 .DS_STORE
+.coverage_map.mvcov
+.trace
