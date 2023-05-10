@@ -164,14 +164,6 @@ module bushi::battle_pass_test{
 
   // === helpers ===
 
-  // mint a battle pass with level = 1, xp = 0 and fixed description and img_url, season = 1
-  // fun mint_default_with_fixed_description_url(admin: address, scenario: &mut Scenario): BattlePass{
-  //   let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-  //   let battle_pass = battle_pass::mint_default(&mint_cap, utf8(b"Play Bushi to earn in-game assets using this battle pass"), b"dummy.com", 70, 1000, 1, test_scenario::ctx(scenario));
-  //   test_scenario::return_to_address(admin, mint_cap);
-  //   battle_pass
-  // }
-
   // mint a battle pass with level = 1, xp = 0 (default)
   fun mint_default(admin: address, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
