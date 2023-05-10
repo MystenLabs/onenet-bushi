@@ -208,6 +208,7 @@ module bushi::cosmetic_skin {
 
   /// update cosmetic skin level
   /// aborts when in_game is false (cosmetic skin is not in-game)
+  /// or when the new_level > level_cap
   public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, new_level: u64){
     // make sure the cosmetic skin is in-game
     assert!(cosmetic_skin.in_game, ECannotUpdate);

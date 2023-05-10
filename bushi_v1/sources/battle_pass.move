@@ -242,12 +242,13 @@ module bushi::battle_pass{
 
   /// update battle pass level, xp, xp_to_next_level
   /// aborts when in_game is false (battle pass is not in-game)
+  /// or when new_level > level_cap
   public fun update(battle_pass: &mut BattlePass, new_level: u64, new_xp: u64, new_xp_to_next_level: u64){
     // make sure the battle_pass is in-game
     assert!(battle_pass.in_game, ECannotUpdate);
 
     // make sure new_level is not greater than level_cap
-    assert!(new_level < battle_pass.level_cap, ELevelGreaterOrEqualThanLevelCap);
+    assert!(new_level <= battle_pass.level_cap, ELevelGreaterOrEqualThanLevelCap);
 
     battle_pass.level = new_level;
     battle_pass.xp = new_xp;
