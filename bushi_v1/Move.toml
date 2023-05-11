@@ -38,6 +38,12 @@ subdir = "contracts/kiosk"
 # testnet-0.33.0
 rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
 
+[dev-dependencies.Utils]
+git = "https://github.com/Origin-Byte/nft-protocol"
+subdir = "contracts/utils"
+# testnet-0.33.0
+rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+
 [addresses]
 bushi =  "0x0"
 nft_protocol = "0xbc3df36be17f27ac98e3c839b2589db8475fa07b20657b08e8891e3aaf5ee5f9"

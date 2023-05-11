@@ -1,13 +1,27 @@
 #[test_only]
 module bushi::battle_pass_test{
   use std::string::{String, utf8};
+  use std::vector;
 
-  use sui::object::ID;
+  use sui::object::{Self, ID};
   use sui::test_scenario::{Self, Scenario};
   use sui::transfer;
+  use sui::sui::SUI;
   use sui::url::{Self, Url};
+  use sui::coin;
+  use sui::package::Publisher;
+  use sui::kiosk::{Self, Kiosk};
   
   use nft_protocol::mint_cap::MintCap;
+  use nft_protocol::transfer_token::{Self, TransferToken};
+  use ob_launchpad::listing::{Self, Listing};
+  use ob_launchpad::fixed_price;
+  use ob_kiosk::ob_kiosk;
+  use ob_utils::dynamic_vector;
+  use ob_permissions::witness;
+  use ob_request::withdraw_request::{Self, WITHDRAW_REQ};
+  use ob_request::request::{Policy, WithNft};
+  use ob_launchpad::warehouse::{Self, Warehouse};
 
   use bushi::battle_pass::{BattlePass, Self, InGameToken, ELevelGreaterOrEqualThanLevelCap, ECannotUpdate, EWrongToken};
 
@@ -273,6 +287,120 @@ module bushi::battle_pass_test{
     // end test
     test_scenario::end(scenario_val);
   }
+  
+  #[test]
+  fun test_integration() {
+    // module is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // === Clutchy Launchpad Sale ===
+
+    // next transaction by admin to create a Clutchy Warehouse, mint a battle pass and transfer to it
+
+    // 1. Create Clutchy `Warehouse`
+    test_scenario::next_tx(scenario, ADMIN);
+    let warehouse = warehouse::new<BattlePass>(
+        test_scenario::ctx(scenario),
+    );
+
+    // 2. Admin pre-mints NFTs to the Warehouse
+    mint_to_launchpad(
+      ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 2, 150, 500, 2000, 2, &mut warehouse, scenario
+    );
+
+    let nft_id = get_nft_id(&warehouse);
+    
+    // 3. Create `Listing`
+    test_scenario::next_tx(scenario, ADMIN);
+
+    listing::init_listing(
+        ADMIN, // Admin wallet
+        ADMIN, // Receiver of proceeds wallet
+        test_scenario::ctx(scenario),
+    );
+
+    // 4. Add Clutchy Warehouse to the Listing
+    test_scenario::next_tx(scenario, ADMIN);
+    let listing = test_scenario::take_shared<Listing>(scenario);
+
+    let inventory_id = listing::insert_warehouse(&mut listing, warehouse, test_scenario::ctx(scenario));
+
+    // 5. Create the launchpad sale
+    let venue_id = fixed_price::create_venue<BattlePass, SUI>(
+        &mut listing, inventory_id, false, 100, test_scenario::ctx(scenario)
+    );
+    listing::sale_on(&mut listing, venue_id, test_scenario::ctx(scenario));
+
+    // 6. Buy NFT from Clutchy
+    test_scenario::next_tx(scenario, USER_NON_CUSTODIAL);
+
+    let wallet = coin::mint_for_testing<SUI>(100, test_scenario::ctx(scenario));
+
+    let (user_kiosk, _) = ob_kiosk::new(test_scenario::ctx(scenario));
+
+    fixed_price::buy_nft_into_kiosk<BattlePass, SUI>(
+        &mut listing,
+        venue_id,
+        &mut wallet,
+        &mut user_kiosk,
+        test_scenario::ctx(scenario),
+    );
+
+    transfer::public_share_object(user_kiosk);
+
+    // 6. Verify NFT was bought
+    test_scenario::next_tx(scenario, USER_NON_CUSTODIAL);
+
+    // Check NFT was transferred with correct logical owner
+    let user_kiosk = test_scenario::take_shared<Kiosk>(scenario);
+    assert!(
+      kiosk::has_item(&user_kiosk, nft_id), 0
+    );
+
+    // === Custodial Wallet - Owner Kiosk Interoperability ===
+
+    // 7. Send NFT from Kiosk to custodial walet
+    test_scenario::next_tx(scenario, ADMIN);
+
+    // Get publisher as admin
+    let pub = test_scenario::take_from_address<Publisher>(scenario, ADMIN);
+    let withdraw_policy = test_scenario::take_shared<Policy<WithNft<BattlePass, WITHDRAW_REQ>>>(scenario);
+    
+    // Create delegated witness from Publisher
+    let dw = witness::from_publisher<BattlePass>(&pub);
+    transfer_token::create_and_transfer(dw, USER, USER_NON_CUSTODIAL, test_scenario::ctx(scenario));
+
+    test_scenario::next_tx(scenario, USER_NON_CUSTODIAL);
+    let transfer_auth = test_scenario::take_from_address<TransferToken<BattlePass>>(scenario, USER_NON_CUSTODIAL);
+    
+    // Withdraws NFT from the Kiosk with a WithdrawRequest promise that needs to be resolved in the same
+    // programmable batch
+    let (nft, req) = ob_kiosk::withdraw_nft_signed<BattlePass>(
+      &mut user_kiosk, nft_id, test_scenario::ctx(scenario)
+    );
+
+    // Transfers NFT to the custodial wallet address
+    transfer_token::confirm(nft, transfer_auth, withdraw_request::inner_mut(&mut req));
+
+    // Resolves the WithdrawRequest
+    withdraw_request::confirm(req, &withdraw_policy);
+
+    // Assert that the NFT has been transferred successfully to the custodial wallet address
+    test_scenario::next_tx(scenario, USER);
+    let nft = test_scenario::take_from_address<BattlePass>(scenario, USER);
+    assert!(object::id(&nft) == nft_id, 0);
+
+    // Return objects and end test
+    transfer::public_transfer(wallet, USER_NON_CUSTODIAL);
+    transfer::public_transfer(nft, USER);
+    transfer::public_transfer(pub, ADMIN);
+    test_scenario::return_shared(listing);
+    test_scenario::return_shared(withdraw_policy);
+    test_scenario::return_shared(user_kiosk);
+    test_scenario::end(scenario_val);
+  }
 
   // === helpers ===
 
@@ -289,6 +417,12 @@ module bushi::battle_pass_test{
     let battle_pass = battle_pass::mint(&mint_cap, description, url_bytes, level, level_cap, xp, xp_to_next_level, season, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
+  }
+
+  fun mint_to_launchpad(admin: address, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, scenario: &mut Scenario) {
+    let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
+    battle_pass::mint_to_launchpad(&mint_cap, description, url_bytes, level, level_cap, xp, xp_to_next_level, season, warehouse, test_scenario::ctx(scenario));
+    test_scenario::return_to_address(admin, mint_cap);
   }
 
   // ensure battle pass fields are correct
@@ -323,6 +457,11 @@ module bushi::battle_pass_test{
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     battle_pass::update(&mut battle_pass, new_level, new_xp, new_xp_to_next_level);
     test_scenario::return_to_address(user, battle_pass);
+  }
+
+  fun get_nft_id(warehouse: &Warehouse<BattlePass>): ID {
+    let chunk = dynamic_vector::borrow_chunk(warehouse::nfts(warehouse), 0);
+    *vector::borrow(chunk, 0)
   }
 
   /// ensures battle pass level and xp is as intended, aborts otherwise
