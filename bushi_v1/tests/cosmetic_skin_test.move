@@ -22,7 +22,7 @@ module bushi::cosmetic_skin_test {
   use ob_request::request::{Policy, WithNft};
   use ob_launchpad::warehouse::{Self, Warehouse};
 
-  use bushi::cosmetic_skin::{Self, CosmeticSkin, UnlockUpdatesTicket, EWrongToken, ECannotUpdate, ELevelGreaterOrEqualThanLevelCap};
+  use bushi::cosmetic_skin::{Self, CosmeticSkin, UnlockUpdatesTicket, EWrongToken, ECannotUpdate, ELevelGreaterThanLevelCap};
 
   // error codes
   const EIncorrectName: u64 = 0;
@@ -175,7 +175,7 @@ module bushi::cosmetic_skin_test {
   }
 
   #[test]
-  #[expected_failure(abort_code = ELevelGreaterOrEqualThanLevelCap)]
+  #[expected_failure(abort_code = ELevelGreaterThanLevelCap)]
   fun test_update_when_reached_level_cap() {
 
     // test is initialized by admin

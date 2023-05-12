@@ -35,7 +35,7 @@ module bushi::battle_pass{
   /// errors
   const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
-  const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
+  const ELevelGreaterThanLevelCap: u64 = 2;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -248,7 +248,7 @@ module bushi::battle_pass{
     assert!(battle_pass.in_game, ECannotUpdate);
 
     // make sure new_level is not greater than level_cap
-    assert!(new_level <= battle_pass.level_cap, ELevelGreaterOrEqualThanLevelCap);
+    assert!(new_level <= battle_pass.level_cap, ELevelGreaterThanLevelCap);
 
     battle_pass.level = new_level;
     battle_pass.xp = new_xp;

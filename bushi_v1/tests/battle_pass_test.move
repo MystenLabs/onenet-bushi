@@ -22,7 +22,7 @@ module bushi::battle_pass_test{
   use ob_request::request::{Policy, WithNft};
   use ob_launchpad::warehouse::{Self, Warehouse};
 
-  use bushi::battle_pass::{BattlePass, Self, UnlockUpdatesTicket, ELevelGreaterOrEqualThanLevelCap, ECannotUpdate, EWrongToken};
+  use bushi::battle_pass::{BattlePass, Self, UnlockUpdatesTicket, ELevelGreaterThanLevelCap, ECannotUpdate, EWrongToken};
 
   // errors
   const EIncorrectDescription: u64 = 0;
@@ -207,7 +207,7 @@ module bushi::battle_pass_test{
   }
 
   #[test]
-  #[expected_failure(abort_code = ELevelGreaterOrEqualThanLevelCap)]
+  #[expected_failure(abort_code = ELevelGreaterThanLevelCap)]
   fun test_update_when_reached_level_cap() {
 
     // test is initialized by admin

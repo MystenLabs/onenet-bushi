@@ -34,7 +34,7 @@ module bushi::cosmetic_skin {
   /// errors
   const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
-  const ELevelGreaterOrEqualThanLevelCap: u64 = 2;
+  const ELevelGreaterThanLevelCap: u64 = 2;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -214,7 +214,7 @@ module bushi::cosmetic_skin {
     assert!(cosmetic_skin.in_game, ECannotUpdate);
 
     // make sure the new level is not greater than the level cap
-    assert!(new_level <= cosmetic_skin.level_cap, ELevelGreaterOrEqualThanLevelCap);
+    assert!(new_level <= cosmetic_skin.level_cap, ELevelGreaterThanLevelCap);
 
     cosmetic_skin.level = new_level;
   }
