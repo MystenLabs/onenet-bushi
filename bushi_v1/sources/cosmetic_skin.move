@@ -9,7 +9,6 @@ module bushi::cosmetic_skin {
   use sui::package;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
-  use sui::url::{Self, Url};
 
   // --- OB imports ---
 
@@ -65,7 +64,7 @@ module bushi::cosmetic_skin {
     id: UID,
     name: String,
     description: String,
-    img_url: Url,
+    img_url: String,
     level: u64,
     level_cap: u64,
     in_game: bool,
@@ -141,13 +140,13 @@ module bushi::cosmetic_skin {
 
   /// mint a cosmetic skin
   /// by default in_game = false
-  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
+  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url: String, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
     let cosmetic_skin = CosmeticSkin {
       id: object::new(ctx),
       name,
       description,
-      img_url: url::new_unsafe_from_bytes(img_url_bytes),
+      img_url,
       level,
       level_cap,
       in_game: false,
@@ -166,10 +165,10 @@ module bushi::cosmetic_skin {
   /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
-    mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
+    mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
     ) {
 
-      let cosmetic_skin = mint(mint_cap, name, description, img_url_bytes, level, level_cap, ctx);
+      let cosmetic_skin = mint(mint_cap, name, description, img_url, level, level_cap, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
@@ -292,7 +291,7 @@ module bushi::cosmetic_skin {
   }
 
   #[test_only]
-  public fun img_url(cosmetic_skin: &CosmeticSkin): Url {
+  public fun img_url(cosmetic_skin: &CosmeticSkin): String {
     cosmetic_skin.img_url
   }
 

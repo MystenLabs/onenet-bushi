@@ -10,6 +10,9 @@ dependencies = [
   { name = "Permissions" },
   { name = "Request" },
   { name = "Sui" },
+]
+
+dev-dependencies = [
   { name = "Utils" },
 ]
 

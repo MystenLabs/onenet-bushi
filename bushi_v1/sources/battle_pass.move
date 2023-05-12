@@ -9,7 +9,6 @@ module bushi::battle_pass{
   use sui::package;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
-  use sui::url::{Self, Url};
 
   // --- OB imports ---
 
@@ -67,7 +66,7 @@ module bushi::battle_pass{
     id: UID,
     description: String,
     // image url
-    img_url: Url,
+    img_url: String,
     level: u64,
     level_cap: u64,
     xp: u64,
@@ -152,13 +151,13 @@ module bushi::battle_pass{
   /// mint a battle pass NFT
   /// by default, in_game = false
   public fun mint(
-    mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
 
       let battle_pass = BattlePass { 
         id: object::new(ctx),
         description, 
-        img_url: url::new_unsafe_from_bytes(url_bytes),
+        img_url,
         level,
         level_cap,
         xp,
@@ -181,29 +180,29 @@ module bushi::battle_pass{
   /// mint a battle pass NFT that has level = 1, xp = 0
   // we can specify and change default values
   public fun mint_default(
-    mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
 
-      mint(mint_cap, description, url_bytes, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, season, ctx)
+      mint(mint_cap, description, img_url, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, season, ctx)
   }
 
   /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
-    mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint(mint_cap, description, url_bytes, level, level_cap, xp, xp_to_next_level, season, ctx);
+      let battle_pass = mint(mint_cap, description, img_url, level, level_cap, xp, xp_to_next_level, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
   /// mint to launchpad with default values
   public fun mint_default_to_launchpad(
-    mint_cap: &MintCap<BattlePass>, description: String, url_bytes: vector<u8>, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint_default(mint_cap, description, url_bytes, level_cap, xp_to_next_level, season, ctx);
+      let battle_pass = mint_default(mint_cap, description, img_url, level_cap, xp_to_next_level, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }
@@ -328,7 +327,7 @@ module bushi::battle_pass{
   }
 
   #[test_only]
-  public fun img_url(battle_pass: &BattlePass): Url {
+  public fun img_url(battle_pass: &BattlePass): String {
     battle_pass.img_url
   }
 

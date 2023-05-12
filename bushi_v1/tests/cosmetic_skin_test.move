@@ -6,7 +6,6 @@ module bushi::cosmetic_skin_test {
   use sui::object::{Self, ID};
   use sui::test_scenario::{Self, Scenario};
   use sui::transfer;
-  use sui::url::{Self, Url};
   use sui::coin;
   use sui::sui::SUI;
   use sui::package::Publisher;
@@ -56,8 +55,8 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
-    ensure_cosmetic_skin_fields_are_correct(&cosmetic_skin, utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), url::new_unsafe_from_bytes(DUMMY_URL_BYTES), 1, 3, false);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
+    ensure_cosmetic_skin_fields_are_correct(&cosmetic_skin, utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, false);
 
     // transfer cosmetic skin to user
     transfer::public_transfer(cosmetic_skin, USER);
@@ -76,7 +75,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     // keep id of cosmetic skin for in-game token later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     // admin transfers cosmetic skin to user
@@ -122,14 +121,14 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin and send it to user1
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin_1 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin_1 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     // keep the id of the cosmetic skin 1 for later
     let cosmetic_skin_1_id = cosmetic_skin::id(&cosmetic_skin_1);
     transfer::public_transfer(cosmetic_skin_1, USER_1);
 
     // next transaction by admin to mint a cosmetic skin and send it to user2
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin_2 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin_2 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     transfer::public_transfer(cosmetic_skin_2, USER_2);
 
     // next transaction by admin to create an in-game token for the cosmetic skin of user1
@@ -163,7 +162,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin and send it to user
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     transfer::public_transfer(cosmetic_skin, USER);
 
     // next transaction by user that tries to update their cosmetic skin
@@ -187,7 +186,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin and send it to user
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     // keep the id of the cosmetic skin to create update token later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     transfer::public_transfer(cosmetic_skin, USER);
@@ -223,7 +222,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, scenario);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     // keep id of cosmetic skin for in-game token later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     // admin transfers cosmetic skin to user
@@ -275,7 +274,7 @@ module bushi::cosmetic_skin_test {
 
     // 2. Admin pre-mints NFTs to the Warehouse
     mint_to_launchpad(
-      utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), DUMMY_URL_BYTES, 1, 3, &mut warehouse, scenario
+      utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, &mut warehouse, scenario
     );
 
     let nft_id = get_nft_id(&warehouse);
@@ -372,16 +371,16 @@ module bushi::cosmetic_skin_test {
 
 
 
-  fun mint(name: String, description:String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
+  fun mint(name: String, description:String, img_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    let cosmetic_skin = cosmetic_skin::mint(&mint_cap, name, description, img_url_bytes, level, level_cap, test_scenario::ctx(scenario));
+    let cosmetic_skin = cosmetic_skin::mint(&mint_cap, name, description, img_url, level, level_cap, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
     cosmetic_skin
   }
   
-  fun mint_to_launchpad(name: String, description:String, img_url_bytes: vector<u8>, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, scenario: &mut Scenario) {
+  fun mint_to_launchpad(name: String, description:String, img_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, scenario: &mut Scenario) {
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    cosmetic_skin::mint_to_launchpad(&mint_cap, name, description, img_url_bytes, level, level_cap, warehouse, test_scenario::ctx(scenario));
+    cosmetic_skin::mint_to_launchpad(&mint_cap, name, description, img_url, level, level_cap, warehouse, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
   }
 
@@ -405,7 +404,7 @@ module bushi::cosmetic_skin_test {
     test_scenario::return_to_address(user, cosmetic_skin);
   }
 
-  fun ensure_cosmetic_skin_fields_are_correct(cosmetic_skin: &CosmeticSkin, intended_name: String, intended_description: String, intended_img_url: Url, intended_level: u64, intended_level_cap: u64, intended_in_game: bool){
+  fun ensure_cosmetic_skin_fields_are_correct(cosmetic_skin: &CosmeticSkin, intended_name: String, intended_description: String, intended_img_url: String, intended_level: u64, intended_level_cap: u64, intended_in_game: bool){
     assert!(cosmetic_skin::name(cosmetic_skin) == intended_name, EIncorrectName);
     assert!(cosmetic_skin::description(cosmetic_skin) == intended_description, EIncorrectDescription);
     assert!(cosmetic_skin::img_url(cosmetic_skin) == intended_img_url, EIncorrectUrl);
