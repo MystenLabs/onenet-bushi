@@ -75,9 +75,9 @@ module bushi::battle_pass{
     in_game: bool,
   }
 
-  /// token to allow mutation of the fields of the the battle pass when battle pass is in-game
+  /// ticket to allow mutation of the fields of the the battle pass when battle pass is in-game
   /// should be created and be used after the battle pass is transferred to the custodial wallet of the player
-  struct InGameToken has key, store {
+  struct UnlockUpdatesTicket has key, store {
     id: UID,
     battle_pass_id: ID,
   }
@@ -129,7 +129,7 @@ module bushi::battle_pass{
     let (withdraw_policy, withdraw_policy_cap) = withdraw_request::init_policy<BattlePass>(&publisher, ctx);
 
     // battle passes should be withdrawn to kiosks
-    // register the withdraw policy to require a transfer token to withdraw from a kiosk
+    // register the withdraw policy to require a transfer ticket to withdraw from a kiosk
     transfer_token::enforce(&mut withdraw_policy, &withdraw_policy_cap);
 
     // --- transfers to address that published the module ---
@@ -207,15 +207,15 @@ module bushi::battle_pass{
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
-  // === In-game token ====
+  // ===Unlock updates ticket ====
 
-  /// create an InGameToken
-  /// @param battle_pass_id: the id of the battle pass this token is issued for
-  public fun create_in_game_token(
+  /// create an UnlockUpdatesTicket
+  /// @param battle_pass_id: the id of the battle pass this ticket is issued for
+  public fun create_unlock_updates_ticket(
     _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
-    ): InGameToken {
+    ): UnlockUpdatesTicket {
 
-    InGameToken {
+    UnlockUpdatesTicket {
       id: object::new(ctx),
       battle_pass_id,
     }
@@ -224,17 +224,17 @@ module bushi::battle_pass{
   // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their battle pass
-  /// aborts if the in_game_token is not issued for this battle pass
-  public fun unlock_updates(battle_pass: &mut BattlePass, in_game_token: InGameToken){
+  /// aborts if the unlock_updates_ticket is not issued for this battle pass
+  public fun unlock_updates(battle_pass: &mut BattlePass, unlock_updates_ticket: UnlockUpdatesTicket){
 
-      // make sure in_game_token is for this battle pass
-      assert!(in_game_token.battle_pass_id == object::uid_to_inner(&battle_pass.id), EWrongToken);
+      // make sure unlock_updates_ticket is for this battle pass
+      assert!(unlock_updates_ticket.battle_pass_id == object::uid_to_inner(&battle_pass.id), EWrongToken);
       
       // set in_game to true
       battle_pass.in_game = true;
 
-      // delete in_game_token
-      let InGameToken { id: in_game_token_id, battle_pass_id: _ } = in_game_token;
+      // delete unlock_updates_ticket
+      let UnlockUpdatesTicket { id: in_game_token_id, battle_pass_id: _ } = unlock_updates_ticket;
       object::delete(in_game_token_id);
   }
 
@@ -272,7 +272,7 @@ module bushi::battle_pass{
     ob_kiosk::deposit(player_kiosk, battle_pass, ctx);
   }
 
-  /// lock in-game updates
+  /// lock updates
   // this should be called by the player's custodial wallet before transferring
   public fun lock_updates(
     battle_pass: &mut BattlePass

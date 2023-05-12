@@ -22,7 +22,7 @@ module bushi::cosmetic_skin_test {
   use ob_request::request::{Policy, WithNft};
   use ob_launchpad::warehouse::{Self, Warehouse};
 
-  use bushi::cosmetic_skin::{Self, CosmeticSkin, InGameToken, EWrongToken, ECannotUpdate, ELevelGreaterOrEqualThanLevelCap};
+  use bushi::cosmetic_skin::{Self, CosmeticSkin, UnlockUpdatesTicket, EWrongToken, ECannotUpdate, ELevelGreaterOrEqualThanLevelCap};
 
   // error codes
   const EIncorrectName: u64 = 0;
@@ -76,27 +76,27 @@ module bushi::cosmetic_skin_test {
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
     let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
-    // keep id of cosmetic skin for in-game token later
+    // keep id of cosmetic skin for unlock updates ticket later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     // admin transfers cosmetic skin to user
     // assume user here is a custodial wallet
     transfer::public_transfer(cosmetic_skin, USER);
 
-    // next transaction by admin to create an in-game token for the cosmetic skin
+    // next transaction by admin to create an unlock updates ticket for the cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(cosmetic_skin_id, scenario);
-    // admin transfers in-game token to user
-    transfer::public_transfer(in_game_token, USER);
+    let unlock_updates_ticket = create_unlock_updates_ticket(cosmetic_skin_id, scenario);
+    // admin transfers unlock updates ticket to user
+    transfer::public_transfer(unlock_updates_ticket, USER);
 
     // next transaction by user's custodial wallet to unlock updates for their cosmetic skin
     test_scenario::next_tx(scenario, USER);
     unlock_updates(USER, scenario);
 
     // next transaction by user's custodial wallet to
-    // 1. make sure that the in-game token is burned
+    // 1. make sure that the unlock updates ticket is burned
     // 2. update their cosmetic skin
     test_scenario::next_tx(scenario, USER);
-    assert!(!test_scenario::has_most_recent_for_address<InGameToken>(USER), EObjectShouldHaveNotBeenFound);
+    assert!(!test_scenario::has_most_recent_for_address<UnlockUpdatesTicket>(USER), EObjectShouldHaveNotBeenFound);
     update(USER, 2, scenario);
 
     // next transaction by user to make sure that
@@ -131,18 +131,18 @@ module bushi::cosmetic_skin_test {
     let cosmetic_skin_2 = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
     transfer::public_transfer(cosmetic_skin_2, USER_2);
 
-    // next transaction by admin to create an in-game token for the cosmetic skin of user1
+    // next transaction by admin to create an unlock updates ticket for the cosmetic skin of user1
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(cosmetic_skin_1_id, scenario);
-    // admin transfers in-game token to user1
-    transfer::public_transfer(in_game_token, USER_1);
+    let unlock_updates_ticket = create_unlock_updates_ticket(cosmetic_skin_1_id, scenario);
+    // admin transfers unlock updates ticket to user1
+    transfer::public_transfer(unlock_updates_ticket, USER_1);
 
-    // next transaction by user1 that sends their in-game token to user2
+    // next transaction by user1 that sends their unlock updates ticket to user2
     test_scenario::next_tx(scenario, USER_1);
-    let in_game_token = test_scenario::take_from_address<InGameToken>(scenario, USER_1);
-    transfer::public_transfer(in_game_token, USER_2);
+    let unlock_updates_ticket = test_scenario::take_from_address<UnlockUpdatesTicket>(scenario, USER_1);
+    transfer::public_transfer(unlock_updates_ticket, USER_2);
 
-    // next transaction by user2 to try and unlock their cosmetic skin with the unlock token of user1
+    // next transaction by user2 to try and unlock their cosmetic skin with the unlock ticket of user1
     test_scenario::next_tx(scenario, USER_2);
     unlock_updates(USER_2, scenario);
 
@@ -187,15 +187,15 @@ module bushi::cosmetic_skin_test {
     // next transaction by admin to mint a cosmetic skin and send it to user
     test_scenario::next_tx(scenario, ADMIN);
     let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
-    // keep the id of the cosmetic skin to create update token later
+    // keep the id of the cosmetic skin to create update ticket later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     transfer::public_transfer(cosmetic_skin, USER);
 
-    // next transaction by admin to issue an in-game token for the cosmetic skin of user
+    // next transaction by admin to issue an unlock updates ticket for the cosmetic skin of user
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(cosmetic_skin_id, scenario);
-    // admin transfers in-game token to user
-    transfer::public_transfer(in_game_token, USER);
+    let unlock_updates_ticket = create_unlock_updates_ticket(cosmetic_skin_id, scenario);
+    // admin transfers unlock updates ticket to user
+    transfer::public_transfer(unlock_updates_ticket, USER);
 
     // next transaction by user to unlock updates for their cosmetic skin
     test_scenario::next_tx(scenario, USER);
@@ -223,17 +223,17 @@ module bushi::cosmetic_skin_test {
     // next transaction by admin to mint a cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
     let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
-    // keep id of cosmetic skin for in-game token later
+    // keep id of cosmetic skin for unlock updates ticket later
     let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
     // admin transfers cosmetic skin to user
     // assume user here is a custodial wallet
     transfer::public_transfer(cosmetic_skin, USER);
 
-    // next transaction by admin to create an in-game token for the cosmetic skin
+    // next transaction by admin to create an unlock updates ticket for the cosmetic skin
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(cosmetic_skin_id, scenario);
-    // admin transfers in-game token to user
-    transfer::public_transfer(in_game_token, USER);
+    let unlock_updates_ticket = create_unlock_updates_ticket(cosmetic_skin_id, scenario);
+    // admin transfers unlock updates ticket to user
+    transfer::public_transfer(unlock_updates_ticket, USER);
 
     // next transaction by user's custodial wallet to unlock updates for their cosmetic skin
     test_scenario::next_tx(scenario, USER);
@@ -384,17 +384,17 @@ module bushi::cosmetic_skin_test {
     test_scenario::return_to_address(ADMIN, mint_cap);
   }
 
-  fun create_in_game_token(cosmetic_skin_id: ID, scenario: &mut Scenario): InGameToken{
+  fun create_unlock_updates_ticket(cosmetic_skin_id: ID, scenario: &mut Scenario): UnlockUpdatesTicket{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    let in_game_token = cosmetic_skin::create_in_game_token(&mint_cap, cosmetic_skin_id, test_scenario::ctx(scenario));
+    let unlock_updates_ticket = cosmetic_skin::create_unlock_updates_ticket(&mint_cap, cosmetic_skin_id, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
-    in_game_token
+    unlock_updates_ticket
   }
 
   fun unlock_updates(user: address, scenario: &mut Scenario){
-    let in_game_token = test_scenario::take_from_address<InGameToken>(scenario, user);
+    let unlock_updates_ticket = test_scenario::take_from_address<UnlockUpdatesTicket>(scenario, user);
     let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, user);
-    cosmetic_skin::unlock_updates(&mut cosmetic_skin, in_game_token);
+    cosmetic_skin::unlock_updates(&mut cosmetic_skin, unlock_updates_ticket);
     test_scenario::return_to_address(user, cosmetic_skin);
   }
 

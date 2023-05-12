@@ -22,7 +22,7 @@ module bushi::battle_pass_test{
   use ob_request::request::{Policy, WithNft};
   use ob_launchpad::warehouse::{Self, Warehouse};
 
-  use bushi::battle_pass::{BattlePass, Self, InGameToken, ELevelGreaterOrEqualThanLevelCap, ECannotUpdate, EWrongToken};
+  use bushi::battle_pass::{BattlePass, Self, UnlockUpdatesTicket, ELevelGreaterOrEqualThanLevelCap, ECannotUpdate, EWrongToken};
 
   // errors
   const EIncorrectDescription: u64 = 0;
@@ -113,13 +113,13 @@ module bushi::battle_pass_test{
     // next transaction by admin to create a battle pass and transfer it to user
     test_scenario::next_tx(scenario, ADMIN);
     let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 1, scenario);
-    // keep the id of the battle pass to create update token later
+    // keep the id of the battle pass to create update ticket later
     let battle_pass_id = battle_pass::id(&battle_pass);
     transfer::public_transfer(battle_pass, USER);
 
-    // next transaction by admin to issue an in-game token for the battle pass of user
+    // next transaction by admin to issue an unlock updates ticket for the battle pass of user
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(battle_pass_id, scenario);
+    let in_game_token = create_unlock_updates_ticket(battle_pass_id, scenario);
     transfer::public_transfer(in_game_token, USER);
 
     // next transaction by user to unlock updates for their battle pass
@@ -129,8 +129,8 @@ module bushi::battle_pass_test{
 
     // next transaction by user to update their battle pass
     test_scenario::next_tx(scenario, USER);
-    // make sure first that the in-game token is burned
-    assert!(!test_scenario::has_most_recent_for_address<InGameToken>(USER), EObjectShouldHaveNotBeenFound);
+    // make sure first that the unlock updates ticket is burned
+    assert!(!test_scenario::has_most_recent_for_address<UnlockUpdatesTicket>(USER), EObjectShouldHaveNotBeenFound);
     // new_level = 1, new_xp = 400, new_xp_to_next_level: 600
     update_battle_pass(USER, 1, 400, 600, scenario);
 
@@ -163,18 +163,18 @@ module bushi::battle_pass_test{
     let battle_pass_2 = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 1, scenario);
     transfer::public_transfer(battle_pass_2, USER_2);
 
-    // next transaction by admin to create an in-game token for the battle pass of user1
+    // next transaction by admin to create an unlock updates ticket for the battle pass of user1
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(battle_pass_1_id, scenario);
-    // admin transfers in-game token to user1
+    let in_game_token = create_unlock_updates_ticket(battle_pass_1_id, scenario);
+    // admin transfers unlock updates ticket to user1
     transfer::public_transfer(in_game_token, USER_1);
 
-    // next transaction by user1 that sends their in-game token to user2
+    // next transaction by user1 that sends their unlock updates ticket to user2
     test_scenario::next_tx(scenario, USER_1);
-    let in_game_token = test_scenario::take_from_address<InGameToken>(scenario, USER_1);
+    let in_game_token = test_scenario::take_from_address<UnlockUpdatesTicket>(scenario, USER_1);
     transfer::public_transfer(in_game_token, USER_2);
 
-    // next transaction by user2 to try and unlock their battle pass with the unlock token of user1
+    // next transaction by user2 to try and unlock their battle pass with the unlock ticket of user1
     test_scenario::next_tx(scenario, USER_2);
     unlock_updates(USER_2, scenario);
 
@@ -219,14 +219,14 @@ module bushi::battle_pass_test{
     // next transaction by admin to mint a battle pass and send it to user
     test_scenario::next_tx(scenario, ADMIN);
     let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 1, scenario);
-    // keep the id of the battle pass to create update token later
+    // keep the id of the battle pass to create update ticket later
     let battle_pass_id = battle_pass::id(&battle_pass);
     transfer::public_transfer(battle_pass, USER);
 
-    // next transaction by admin to issue an in-game token for the battle pass of user
+    // next transaction by admin to issue an unlock updates ticket for the battle pass of user
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(battle_pass_id, scenario);
-    // admin transfers in-game token to user
+    let in_game_token = create_unlock_updates_ticket(battle_pass_id, scenario);
+    // admin transfers unlock updates ticket to user
     transfer::public_transfer(in_game_token, USER);
 
     // next transaction by user to unlock updates for their battle pass
@@ -255,16 +255,16 @@ module bushi::battle_pass_test{
     // next transaction by admin to mint a battle pass
     test_scenario::next_tx(scenario, ADMIN);
     let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 1, scenario);
-    // keep id of battle pass for in-game token later
+    // keep id of battle pass for unlock updates ticket later
     let battle_pass_id = battle_pass::id(&battle_pass);
     // admin transfers battle pass to user
     // assume user here is a custodial wallet
     transfer::public_transfer(battle_pass, USER);
 
-    // next transaction by admin to create an in-game token for the battle pass
+    // next transaction by admin to create an unlock updates ticket for the battle pass
     test_scenario::next_tx(scenario, ADMIN);
-    let in_game_token = create_in_game_token(battle_pass_id, scenario);
-    // admin transfers in-game token to user
+    let in_game_token = create_unlock_updates_ticket(battle_pass_id, scenario);
+    // admin transfers unlock updates ticket to user
     transfer::public_transfer(in_game_token, USER);
 
     // next transaction by user's custodial wallet to unlock updates for their battle pass
@@ -437,15 +437,15 @@ module bushi::battle_pass_test{
     test_scenario::return_to_address(user, battle_pass);
   }
 
-  fun create_in_game_token(battle_pass_id: ID, scenario: &mut Scenario): InGameToken{
+  fun create_unlock_updates_ticket(battle_pass_id: ID, scenario: &mut Scenario): UnlockUpdatesTicket{
   let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, ADMIN);
-  let in_game_token = battle_pass::create_in_game_token(&mint_cap, battle_pass_id, test_scenario::ctx(scenario));
+  let in_game_token = battle_pass::create_unlock_updates_ticket(&mint_cap, battle_pass_id, test_scenario::ctx(scenario));
   test_scenario::return_to_address(ADMIN, mint_cap);
   in_game_token
   }
 
   fun unlock_updates(user: address, scenario: &mut Scenario){
-  let in_game_token = test_scenario::take_from_address<InGameToken>(scenario, user);
+  let in_game_token = test_scenario::take_from_address<UnlockUpdatesTicket>(scenario, user);
   let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
   battle_pass::unlock_updates(&mut battle_pass, in_game_token);
   test_scenario::return_to_address(user, battle_pass);

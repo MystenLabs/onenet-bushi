@@ -13,8 +13,8 @@ The entity that will publish the package will receive a capability of type `Mint
 - allow the owner of a battle pass to alter the value of its level, xp, and xp to next level.
 
 Once a battle pass is transferred to a custodial wallet,
-- the entity owning the `MintCap<BattlePass>` should create an `InGameToken` object for that battle pass that will allow the level, xp and xp to next level fields of the battle pass to be updated, and it should transfer the `InGameToken` object to address of the custodial wallet.
-- The player's custodial wallet will then call the `unlock_updates` function to allow updates to the aforementioned battle pass fields. The `InGameToken` is burned after calling the function, and thus preventing re-usage of the token.
+- the entity owning the `MintCap<BattlePass>` should create an `UnlockUpdatesTicket` object for that battle pass that will allow the level, xp and xp to next level fields of the battle pass to be updated, and it should transfer the `UnlockUpdatesTicket` object to address of the custodial wallet.
+- The player's custodial wallet will then call the `unlock_updates` function to allow updates to the aforementioned battle pass fields. The `UnlockUpdatesTicket` is burned after calling the function, and thus preventing re-usage of the ticket.
 ### `BattlePass` object & minting
 
 #### The `BattlePass` object
@@ -90,40 +90,40 @@ public fun mint_default(
 ```
 
 ### Allowing updates to a battle pass
-Once a battle pass is transferred to a user's custodial wallet, the owner of `MintCap<BattlePass>` can create an `InGameToken` and transfer it to the user's custodial wallet. Then the user's custodial wallet can call the `unlock_updates` function to set the `in_game` field of the `BattlePass` object to `true` and allow calling the `update_battle_pass` function.
-#### The `InGameToken` object
+Once a battle pass is transferred to a user's custodial wallet, the owner of `MintCap<BattlePass>` can create an `UnlockUpdatesTicket` and transfer it to the user's custodial wallet. Then the user's custodial wallet can call the `unlock_updates` function to set the `in_game` field of the `BattlePass` object to `true` and allow calling the `update_battle_pass` function.
+#### The `UnlockUpdatesTicket` object
 ```
-/// token to allow mutation of the fields of the the battle pass when battle pass is in-game
+/// ticket to allow mutation of the fields of the the battle pass when battle pass is in-game
 /// should be created and be used after the battle pass is transferred to the custodial wallet of the player
-struct InGameToken has key, store {
+struct UnlockUpdatesTicket has key, store {
   id: UID,
   battle_pass_id: ID,
 }
 ```
 
-#### Creating an `InGameToken`
-The function `create_in_game_token` creates and returns an `InGameToken` object, and requires the `MintCap<BattlePass>` to ensure that only an authorized entity can create one. It also requires as input the id of the battle pass object the token is issued for.
+#### Creating an `UnlockUpdatesTicket`
+The function `create_unlock_updates_ticket` creates and returns an `UnlockUpdatesTicket` object, and requires the `MintCap<BattlePass>` to ensure that only an authorized entity can create one. It also requires as input the id of the battle pass object the ticket is issued for.
 
-##### Function `create_in_game_token`
-Function `create_in_game_token` creates and returns an `InGameToken` object.
+##### Function `create_unlock_updates_ticket`
+Function `create_unlock_updates_ticket` creates and returns an `UnlockUpdatesTicket` object.
 ```
-/// create an InGameToken
-/// @param battle_pass_id: the id of the battle pass this token is for
-public fun create_in_game_token(
+/// create an UnlockUpdatesTicket
+/// @param battle_pass_id: the id of the battle pass this ticket is for
+public fun create_unlock_updates_ticket(
   _: &MintCap<BattlePass>, battle_pass_id: ID, ctx: &mut TxContext
-  ): InGameToken
+  ): UnlockUpdatesTicket
 ```
 
 ##### Function `unlock_updates`
 Function `unlock_updates` will be called by the user's custodial wallet and sets the `in_game` field of the battle pass to `true`.
 
-The function aborts if the `in_game_token` is not issued for the battle pass of the user.
+The function aborts if the `unlock_updates_ticket` is not issued for the battle pass of the user.
 
-The `in_game_token` is burned inside the function in order to prevent re-usage of the token.
+The `unlock_updates_ticket` is burned inside the function in order to prevent re-usage of the ticket.
 
 ```
 /// the user's custodial wallet will call this function to unlock updates for their battle pass
-public fun unlock_updates(battle_pass: &mut BattlePass, in_game_token: InGameToken)
+public fun unlock_updates(battle_pass: &mut BattlePass, unlock_updates_ticket: UnlockUpdatesTicket)
 ```
 
 #### Updating the Battle Pass fields
@@ -142,7 +142,7 @@ public fun update(battle_pass: &mut BattlePass, new_level: u64, new_xp: u64, new
 Before a battle pass is exported to a non-custodial wallet or a kiosk, the custodial wallet of a player should call the `lock_updates` function to set the `in_game` field of the battle pass to `false`, in order to prevent the fields of the battle pass being altered after it is exported.
 
 ```
-/// lock in-game updates
+/// lock updates
 // this should be called by the player's custodial wallet before transferring
 public fun lock_updates(
   battle_pass: &mut BattlePass
@@ -160,7 +160,7 @@ public fun lock_updates(
      - set royalty cuts
    - withdraw policy:
      - create a withdraw policy
-   - register the withdraw policy to require a transfer token to withdraw from a kiosk
+   - register the withdraw policy to require a transfer ticket to withdraw from a kiosk
 - In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
 - functions `mint_to_launchpad` and `mint_default_to_launchpad`: mint a battle pass and deposit it to a warehouse
 - function `export_to_kiosk` deposits a battle pass to a kiosk.
@@ -233,32 +233,32 @@ public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: Str
 ```
 
 ### Allowing updates to a cosmetic skin
-##### Struct `InGameToken`
+##### Struct `UnlockUpdatesTicket`
 ```
-/// token to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+/// ticket to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
 /// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
-struct InGameToken has key, store {
+struct UnlockUpdatesTicket has key, store {
   id: UID,
   cosmetic_skin_id: ID,
 }
 ```
 
 
-##### Function `create_in_game_token`
+##### Function `create_unlock_updates_ticket`
 ```
- /// create an InGameToken
-/// @param cosmetic_skin_id: the id of the cosmetic skin this token is issued for
-public fun create_in_game_token(
+/// create an UnlockUpdatesTicket
+/// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is issued for
+public fun create_unlock_updates_ticket(
   _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, ctx: &mut TxContext
-  ): InGameToken 
+  ): UnlockUpdatesTicket 
 ```
 
 
 ##### Function `unlock_updates`
 ```
 /// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
-/// aborts if the in_game_token is not issued for this cosmetic skin
-public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, in_game_token: InGameToken)
+/// aborts if the unlock_updates_ticket is not issued for this cosmetic skin
+public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, unlock_updates_ticket: UnlockUpdatesTicket)
 ```
 
 
@@ -274,7 +274,7 @@ public fun update_cosmetic_skin(cosmetic_skin: &mut CosmeticSkin, new_level: u64
 ### Locking updates
 ##### Function `lock`
 ```
-/// lock in-game updates
+/// lock updates
 // this should be called by the player's custodial wallet before transferring
 public fun lock_updates
 ```
@@ -291,7 +291,7 @@ Similarly to the `BattlePass` object:
       - set royalty cuts
     - withdraw policy:
       - create a withdraw policy
-      - register the withdraw policy to require a transfer token to withdraw from a kiosk
+      - register the withdraw policy to require a transfer ticket to withdraw from a kiosk
 - In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
 - functions `mint_to_launchpad` mints a cosmetic skin and deposit it to a warehouse
 - function `export_to_kiosk` deposits a cosmetic skin to a kiosk

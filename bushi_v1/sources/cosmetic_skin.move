@@ -70,9 +70,9 @@ module bushi::cosmetic_skin {
     in_game: bool,
   }
 
-  /// token to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
+  /// ticket to allow mutation of the fields of the the cosmetic skin when cosmetic skin is in-game
   /// should be created and be used after the cosmetic skin is transferred to the custodial wallet of the player
-  struct InGameToken has key, store {
+  struct UnlockUpdatesTicket has key, store {
     id: UID,
     cosmetic_skin_id: ID,
   }
@@ -121,7 +121,7 @@ module bushi::cosmetic_skin {
     let (withdraw_policy, withdraw_policy_cap) = withdraw_request::init_policy<CosmeticSkin>(&publisher, ctx);
 
     // cosmetic skins should be withdrawn to kiosks
-    // register the withdraw policy to require a transfer token to withdraw from a kiosk
+    // register the withdraw policy to require a transfer ticket to withdraw from a kiosk
     transfer_token::enforce(&mut withdraw_policy, &withdraw_policy_cap);
 
     // --- transfers to address that published the module ---
@@ -173,15 +173,15 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  // === In-game token ====
+  // ===Unlock updates ticket ====
 
-  /// create an InGameToken
-  /// @param cosmetic_skin_id: the id of the cosmetic skin this token is issued for
-  public fun create_in_game_token(
+  /// create an UnlockUpdatesTicket
+  /// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is issued for
+  public fun create_unlock_updates_ticket(
     _: &MintCap<CosmeticSkin>, cosmetic_skin_id: ID, ctx: &mut TxContext
-    ): InGameToken {
+    ): UnlockUpdatesTicket {
 
-    InGameToken {
+    UnlockUpdatesTicket {
       id: object::new(ctx),
       cosmetic_skin_id
     }
@@ -190,17 +190,17 @@ module bushi::cosmetic_skin {
   // === Unlock updates ===
 
   /// the user's custodial wallet will call this function to unlock updates for their cosmetic skin
-  /// aborts if the in_game_token is not issued for this cosmetic skin
-  public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, in_game_token: InGameToken){
+  /// aborts if the unlock_updates_ticket is not issued for this cosmetic skin
+  public fun unlock_updates(cosmetic_skin: &mut CosmeticSkin, unlock_updates_ticket: UnlockUpdatesTicket){
 
-      // make sure in_game_token is for this cosmetic skin
-      assert!(in_game_token.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EWrongToken);
+      // make sure unlock_updates_ticket is for this cosmetic skin
+      assert!(unlock_updates_ticket.cosmetic_skin_id == object::uid_to_inner(&cosmetic_skin.id), EWrongToken);
       
       // set in_game to true
       cosmetic_skin.in_game = true;
 
-      // delete in_game_token
-      let InGameToken { id: in_game_token_id, cosmetic_skin_id: _ } = in_game_token;
+      // delete unlock_updates_ticket
+      let UnlockUpdatesTicket { id: in_game_token_id, cosmetic_skin_id: _ } = unlock_updates_ticket;
       object::delete(in_game_token_id);
   }
 
@@ -234,7 +234,7 @@ module bushi::cosmetic_skin {
     ob_kiosk::deposit(player_kiosk, cosmetic_skin, ctx);
   }
 
-  /// lock in-game updates
+  /// lock updates
   // this can be called by the player's custodial wallet before transferring - if the export_to_kiosk function is not called
   // if it is not in-game, this function will do nothing 
   public fun lock_updates(
