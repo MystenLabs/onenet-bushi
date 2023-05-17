@@ -6,47 +6,43 @@ version = "0.0.1"
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
 # testnet-0.33.0
-rev = "ae1212baf8f0837e25926d941db3d26a61c1bea2"
+rev = "38c31cdd0f2ae3963d1e06f00c766cd7f90a7be6"
 
 [dependencies.NftProtocol]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/nft_protocol"
 # testnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Permissions]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/permissions"
-# devnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+# testnet-0.33.0
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Launchpad]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/launchpad"
 # testnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Request]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/request"
 # testnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Kiosk]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/kiosk"
 # testnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dev-dependencies.Utils]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/utils"
 # testnet-0.33.0
-rev = "6040797431ed63e77dd4501698b96fb6dcc0c229"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [addresses]
 bushi =  "0x0"
-nft_protocol = "0xbc3df36be17f27ac98e3c839b2589db8475fa07b20657b08e8891e3aaf5ee5f9"
-ob_permissions = "0x16c5f17f2d55584a6e6daa442ccf83b4530d10546a8e7dedda9ba324e012fc40"
-ob_request = "0xe2c7a6843cb13d9549a9d2dc1c266b572ead0b4b9f090e7c3c46de2714102b43"
-ob_launchpad = "0xc74531639fadfb02d30f05f37de4cf1e1149ed8d23658edd089004830068180b"
