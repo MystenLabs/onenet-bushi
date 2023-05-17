@@ -4,7 +4,7 @@
 // 3. Updates for the battle pass are unlocked
 // 4. User's custodial wallet updates the battle pass fields
 // 5. User's custodial wallet sends the battle pass to a user's non-custodial wallet
-import {Ed25519Keypair, JsonRpcProvider, RawSigner, SuiObjectInfo, TransactionBlock, fromB64, testnetConnection} from "@mysten/sui.js"
+import {Ed25519Keypair, JsonRpcProvider, RawSigner, TransactionBlock, fromB64, testnetConnection} from "@mysten/sui.js"
 import * as dotenv from "dotenv";
 dotenv.config();
 
