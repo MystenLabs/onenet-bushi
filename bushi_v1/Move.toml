@@ -12,37 +12,37 @@ rev = "38c31cdd0f2ae3963d1e06f00c766cd7f90a7be6"
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/nft_protocol"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Permissions]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/permissions"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Launchpad]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/launchpad"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Request]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/request"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dependencies.Kiosk]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/kiosk"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [dev-dependencies.Utils]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/utils"
 # testnet-0.33.0
-rev = "afbf93bcd3146b4ede813fd8f89575f308be829f"
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
 [addresses]
 bushi =  "0x0"
