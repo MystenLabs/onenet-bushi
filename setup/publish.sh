@@ -39,6 +39,8 @@ DIGEST=$(echo "${publish_res}" | jq -r '.digest')
 PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
 newObjs=$(echo "$publish_res" | jq -r '.objectChanges[] | select(.type == "created")')
 UPGRADE_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::package::UpgradeCap")).objectId')
+BP_MINT_CAP=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::mint_cap::MintCap") and contains("::battle_pass::BattlePass")) | .objectId')
+CS_MINT_CAP=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::mint_cap::MintCap") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
 BP_COLLECTION_ID=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::collection::Collection") and contains("::battle_pass::BattlePass")) | .objectId')
 CS_COLLECTION_ID=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::collection::Collection") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
 BP_ROYALTY_STRATEGY=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::royalty_strategy_bps::BpsRoyaltyStrategy") and contains("::battle_pass::BattlePass")) | .objectId')
@@ -57,6 +59,8 @@ SUI_NETWORK=$NETWORK
 DIGEST=$DIGEST
 UPGRADE_CAP_ID=$UPGRADE_CAP_ID
 PACKAGE_ID=$PACKAGE_ID
+BP_MINT_CAP=$BP_MINT_CAP
+CS_MINT_CAP=$CS_MINT_CAP
 BP_COLLECTION_ID=$BP_COLLECTION_ID
 CS_COLLECTION_ID=$CS_COLLECTION_ID
 BP_ROYALTY_STRATEGY=$BP_ROYALTY_STRATEGY
