@@ -3,23 +3,37 @@ module bushi::cosmetic_skin_test {
   use std::string::{utf8, String};
   use std::vector;
 
+  use sui::coin;
   use sui::object::{Self, ID};
   use sui::test_scenario::{Self, Scenario};
   use sui::transfer;
-  use sui::coin;
+  use sui::transfer_policy::TransferPolicy;
   use sui::sui::SUI;
   use sui::package::Publisher;
   use sui::kiosk::{Self, Kiosk};
 
   use nft_protocol::mint_cap::MintCap;
+  use nft_protocol::royalty_strategy_bps::{Self, BpsRoyaltyStrategy};
+  use nft_protocol::transfer_allowlist;
   use nft_protocol::transfer_token::{Self, TransferToken};
+
+  use liquidity_layer_v1::orderbook::{Self, Orderbook};
+
+  use ob_allowlist::allowlist::{Self , Allowlist};
+
   use ob_launchpad::listing::{Self, Listing};
   use ob_launchpad::fixed_price;
+
   use ob_kiosk::ob_kiosk;
+
   use ob_utils::dynamic_vector;
+
   use ob_permissions::witness;
+
   use ob_request::withdraw_request::{Self, WITHDRAW_REQ};
   use ob_request::request::{Policy, WithNft};
+  use ob_request::transfer_request;
+
   use ob_launchpad::warehouse::{Self, Warehouse};
 
   use bushi::cosmetic_skin::{Self, CosmeticSkin, UnlockUpdatesTicket, EWrongToken, ECannotUpdate, ELevelGreaterThanLevelCap};
@@ -39,6 +53,8 @@ module bushi::cosmetic_skin_test {
   const USER_1: address = @0x3;
   const USER_2: address = @0x4;
   const USER_NON_CUSTODIAL: address = @0x5;
+  const USER_1_NON_CUSTODIAL: address = @0x6;
+  const USER_2_NON_CUSTODIAL: address = @0x7;
 
   // const values
   const DUMMY_DESCRIPTION_BYTES: vector<u8> = b"This skin will make your character look like a fairy";
@@ -264,7 +280,7 @@ module bushi::cosmetic_skin_test {
 
     // === Clutchy Launchpad Sale ===
 
-    // next transaction by admin to create a Clutchy Warehouse, mint a battle pass and transfer to it
+    // next transaction by admin to create a Clutchy Warehouse, mint a cosmetic skin and transfer to it
 
     // 1. Create Clutchy `Warehouse`
     test_scenario::next_tx(scenario, ADMIN);
@@ -367,6 +383,120 @@ module bushi::cosmetic_skin_test {
     test_scenario::return_shared(withdraw_policy);
     test_scenario::return_shared(user_kiosk);
     test_scenario::end(scenario_val);
+  }
+
+  #[test]
+  fun test_secondary_market_sale(){
+    // in this test we skip the launchpad sale and transfer directly from admin to user kiosk after minting
+    // the user then sells the cosmetic skin in a secondary market sale
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    cosmetic_skin::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to create an allowlist
+    test_scenario::next_tx(scenario, ADMIN);
+    // create allowlist
+    let (allowlist, allowlist_cap) = allowlist::new(test_scenario::ctx(scenario));
+    // orderbooks can perform trades with our allowlist
+    allowlist::insert_authority<orderbook::Witness>(&allowlist_cap, &mut allowlist);
+    // take publisher and insert collection to allowlist
+    let publisher = test_scenario::take_from_address<Publisher>(scenario, ADMIN);
+    allowlist::insert_collection<CosmeticSkin>(&mut allowlist, &publisher);
+    // return publisher
+    test_scenario::return_to_address(ADMIN, publisher);
+    // share the allowlist
+    transfer::public_share_object(allowlist);
+    // send the allowlist cap to admin
+    transfer::public_transfer(allowlist_cap, ADMIN);
+
+    // next transaction by user 1 to create an ob_kiosk
+    test_scenario::next_tx(scenario, USER_1_NON_CUSTODIAL);
+    let (user_1_kiosk, _) = ob_kiosk::new(test_scenario::ctx(scenario));
+    transfer::public_share_object(user_1_kiosk);
+
+    // next transaction by admin to mint a cosmetic skin and send it to user kiosk
+    test_scenario::next_tx(scenario, ADMIN);
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 1, 3, scenario);
+    // keep the id for later
+    let cosmetic_skin_id = cosmetic_skin::id(&cosmetic_skin);
+    // deposit cosmetic skin to user kiosk
+    let user_1_kiosk = test_scenario::take_shared<Kiosk>(scenario);
+    ob_kiosk::deposit(&mut user_1_kiosk, cosmetic_skin, test_scenario::ctx(scenario));
+    test_scenario::return_shared(user_1_kiosk);
+
+    // next transaction by user 1 to put the cosmetic skin for sale in a secondary market sale
+    test_scenario::next_tx(scenario, USER_1_NON_CUSTODIAL);
+    // user 1 takes the orderbook
+    let orderbook = test_scenario::take_shared<Orderbook<CosmeticSkin, SUI>>(scenario);
+    // user 1 finds their kiosk
+    let user_1_kiosk = test_scenario::take_shared<Kiosk>(scenario);
+    // user 1 puts the cosmetic skin for sale
+    orderbook::create_ask(
+      &mut orderbook,
+      &mut user_1_kiosk,
+      100_000_000,
+      cosmetic_skin_id,
+      test_scenario::ctx(scenario),
+    );
+    test_scenario::return_shared(user_1_kiosk);
+    test_scenario::return_shared(orderbook);
+
+    // next transaction by user 2 to buy the cosmetic skin from user 1
+    test_scenario::next_tx(scenario, USER_2_NON_CUSTODIAL);
+    // take sui coins for testing
+    let coins = coin::mint_for_testing<SUI>(100_000_000, test_scenario::ctx(scenario));
+    // user 2 creates a kiosk
+    let (user_2_kiosk, _) = ob_kiosk::new(test_scenario::ctx(scenario));
+    // user 2 takes the orderbook and user's 1 kiosk
+    let user_1_kiosk = test_scenario::take_shared<Kiosk>(scenario);
+    let orderbook = test_scenario::take_shared<Orderbook<CosmeticSkin, SUI>>(scenario);
+    // user 2 buys the nft from user's 1 kiosk
+    let transfer_request = orderbook::buy_nft(
+      &mut orderbook,
+      &mut user_1_kiosk,
+      &mut user_2_kiosk,
+      cosmetic_skin_id,
+      100_000_000,
+      &mut coins,
+      test_scenario::ctx(scenario),
+    );
+
+    // user 2 goes through trade resolution to pay for royalties
+    // user 2 takes the allowlist
+    let allowlist = test_scenario::take_shared<Allowlist>(scenario);
+    transfer_allowlist::confirm_transfer(&allowlist, &mut transfer_request);
+    let royalty_engine = test_scenario::take_shared<BpsRoyaltyStrategy<CosmeticSkin>>(scenario);
+    // confirm user 2 has payed royalties
+    royalty_strategy_bps::confirm_transfer<CosmeticSkin, SUI>(&mut royalty_engine, &mut transfer_request);
+    // confirm transfer
+    let transfer_policy = test_scenario::take_shared<TransferPolicy<CosmeticSkin>>(scenario);
+    transfer_request::confirm<CosmeticSkin, SUI>(transfer_request, &transfer_policy, test_scenario::ctx(scenario));
+
+    // return objects
+    test_scenario::return_shared(allowlist);
+    test_scenario::return_shared(royalty_engine);
+    test_scenario::return_shared(orderbook);
+    test_scenario::return_shared(user_1_kiosk);
+    test_scenario::return_shared(transfer_policy);
+
+    // public share user 2 kiosk
+    transfer::public_share_object(user_2_kiosk);
+
+    // send coin to user 2 (just to be able to end the test)
+    transfer::public_transfer(coins, USER_2_NON_CUSTODIAL);
+
+    // Confirm the transfer of the NFT
+    test_scenario::next_tx(scenario, USER_2_NON_CUSTODIAL);
+    let user_2_kiosk = test_scenario::take_shared<Kiosk>(scenario);
+    ob_kiosk::assert_has_nft(&user_2_kiosk, cosmetic_skin_id);
+    test_scenario::return_shared(user_2_kiosk);
+
+    // end test 
+    test_scenario::end(scenario_val);
+
   }
 
 

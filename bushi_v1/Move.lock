@@ -6,6 +6,7 @@ version = 0
 dependencies = [
   { name = "Kiosk" },
   { name = "Launchpad" },
+  { name = "LiquidityLayerV1" },
   { name = "NftProtocol" },
   { name = "Permissions" },
   { name = "Request" },
@@ -64,6 +65,21 @@ dependencies = [
   { name = "Allowlist" },
   { name = "Authlist" },
   { name = "Kiosk" },
+  { name = "Permissions" },
+  { name = "Request" },
+  { name = "Sui" },
+  { name = "Utils" },
+]
+
+[[move.package]]
+name = "LiquidityLayerV1"
+source = { git = "https://github.com/Origin-Byte/nft-protocol", rev = "b3c85b735f047a17298d2640357bc75a67538890", subdir = "contracts/liquidity_layer_v1" }
+
+dependencies = [
+  { name = "Allowlist" },
+  { name = "Authlist" },
+  { name = "Kiosk" },
+  { name = "Originmate" },
   { name = "Permissions" },
   { name = "Request" },
   { name = "Sui" },

@@ -26,6 +26,12 @@ subdir = "contracts/launchpad"
 # testnet-0.33.0
 rev = "b3c85b735f047a17298d2640357bc75a67538890"
 
+[dependencies.LiquidityLayerV1]
+git = "https://github.com/Origin-Byte/nft-protocol"
+subdir = "contracts/liquidity_layer_v1"
+# testnet-0.33.0
+rev = "b3c85b735f047a17298d2640357bc75a67538890"
+
 [dependencies.Request]
 git = "https://github.com/Origin-Byte/nft-protocol"
 subdir = "contracts/request"
