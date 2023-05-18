@@ -161,7 +161,8 @@ public fun lock_updates(
      - set royalty cuts
    - withdraw policy:
      - create a withdraw policy
-   - register the withdraw policy to require a transfer ticket to withdraw from a kiosk
+     - register the withdraw policy to require a transfer ticket to withdraw from a kiosk
+   - set up orderbook for secondary market trading
 - In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
 - functions `mint_to_launchpad` and `mint_default_to_launchpad`: mint a battle pass and deposit it to a warehouse
 - function `export_to_kiosk` deposits a battle pass to a kiosk.
@@ -293,6 +294,7 @@ Similarly to the `BattlePass` object:
     - withdraw policy:
       - create a withdraw policy
       - register the withdraw policy to require a transfer ticket to withdraw from a kiosk
+    - set up orderbook for secondary market trading
 - In the mint functions we require a `MintCap<BattlePass>` and emit a `mint_event` when a battle pass is minted.
 - functions `mint_to_launchpad` mints a cosmetic skin and deposit it to a warehouse
 - function `export_to_kiosk` deposits a cosmetic skin to a kiosk
@@ -316,7 +318,7 @@ public fun export_to_kiosk(
 ### Tests
 The module `cosmetic_skins_test` contains tests for the `cosmetic_skins` module. The tests included are the following.
 - `test_unlock_with_wrong_ticket` (has expected failure) tests whether we can unlock a cosmetic skin with an unlock ticket that is not issued for that cosmetic skin
-`test_update_when_locked` (has expected failure) tests whether we can update the `level` of a cosmetic skin when in_game is `false`.
-`test_mint` and `test_update` test whether cosmetic skins are minted and updated with the intended values.
-`test_update_when_reached_level_cap` (has expected failure) tests whether we can update the `level` of a cosmetic skin with a value greater than `level_cap`.
-`test_lock` tests whether we can update the `level` of the cosmetic skin after `lock_updates` has been called.
+- `test_update_when_locked` (has expected failure) tests whether we can update the `level` of a cosmetic skin when in_game is `false`.
+- `test_mint` and `test_update` test whether cosmetic skins are minted and updated with the intended values.
+- `test_update_when_reached_level_cap` (has expected failure) tests whether we can update the `level` of a cosmetic skin with a value greater than `level_cap`.
+- `test_lock` tests whether we can update the `level` of the cosmetic skin after `lock_updates` has been called.

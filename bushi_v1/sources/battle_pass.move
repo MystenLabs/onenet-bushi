@@ -7,6 +7,7 @@ module bushi::battle_pass{
   use sui::kiosk::Kiosk;
   use sui::object::{Self, ID, UID};
   use sui::package;
+  use sui::sui::SUI;
   use sui::transfer;
   use sui::tx_context::{Self, TxContext};
 
@@ -31,6 +32,8 @@ module bushi::battle_pass{
 
   use ob_utils::utils;
 
+  use liquidity_layer_v1::orderbook;
+  
 
   /// errors
   const EWrongToken: u64 = 0;
@@ -131,6 +134,14 @@ module bushi::battle_pass{
     // battle passes should be withdrawn to kiosks
     // register the withdraw policy to require a transfer ticket to withdraw from a kiosk
     transfer_token::enforce(&mut withdraw_policy, &withdraw_policy_cap);
+
+    // --- Secondary Market setup ---
+
+    // set up rderbook for secondary market trading
+    let orderbook = orderbook::new<BattlePass, SUI>(
+        delegated_witness, &transfer_policy, orderbook::no_protection(), ctx,
+    );
+    orderbook::share(orderbook);
 
     // --- transfers to address that published the module ---
     let publisher_address = tx_context::sender(ctx);
