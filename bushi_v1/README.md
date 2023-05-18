@@ -30,6 +30,7 @@ struct BattlePass has key, store{
   level_cap: u64,
   xp: u64,
   xp_to_next_level: u64,
+  rarity: u64,
   season: u64,
   in_game: bool,
 }
@@ -48,6 +49,7 @@ let fields = vector[
   utf8(b"level_cap"),
   utf8(b"xp"),
   utf8(b"xp_to_next_level"),
+  utf8(b"rarity"),
   utf8(b"season"),
 ];
 let values = vector[
@@ -59,6 +61,7 @@ let values = vector[
   utf8(b"{level_cap}"),
   utf8(b"{xp}"),
   utf8(b"{xp_to_next_level}"),
+  utf8(b"{rarity}"),
   utf8(b"{season}"),
 ];
 display::add_multiple<BattlePass>(display, fields, values);
@@ -78,7 +81,7 @@ Function `mint` takes as input the minting capability and values for the fields 
 /// mint a battle pass NFT
 /// by default, in_game = false
 public fun mint(
-  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
+  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
   ): BattlePass
 ```
 
@@ -86,7 +89,7 @@ public fun mint(
 Function `mint_default` returns an object of type `BattlePass` whose level is set to 1 and xp is set to 0.
 ```
 public fun mint_default(
-  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, season: u64, ctx: &mut TxContext
+  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
   ): BattlePass
 ```
 
@@ -171,7 +174,7 @@ public fun lock_updates(
 // mint to launchpad
 // this is for Clutchy integration
 public fun mint_to_launchpad(
-  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
   )
 ```
 
@@ -180,7 +183,7 @@ public fun mint_to_launchpad(
 ```
 // mint to launchpad with default values
 public fun mint_default_to_launchpad(
-  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+  mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
   )
 ```
 
