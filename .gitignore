@@ -5,4 +5,9 @@ node
 display
 .DS_Store
 **/node_modules
+.DS_STORE
+.coverage_map.mvcov
+.trace
 .env
+*.txt
+sui.*
