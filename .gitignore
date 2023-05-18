@@ -1,8 +1,13 @@
 build
+sui.log*
+Move.lock
+node
+display
+.DS_Store
+**/node_modules
 .DS_STORE
 .coverage_map.mvcov
 .trace
-node_modules
 .env
 *.txt
 sui.*
