@@ -35,17 +35,39 @@ if [[ "$publish_res" =~ "error" ]]; then
   exit 1
 fi
 
+DIGEST=$(echo "${publish_res}" | jq -r '.digest')
 PACKAGE_ID=$(echo "${publish_res}" | jq -r '.effects.created[] | select(.owner == "Immutable").reference.objectId')
 newObjs=$(echo "$publish_res" | jq -r '.objectChanges[] | select(.type == "created")')
-UPGRADE_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::package::UpgradeCap)).objectId')
+UPGRADE_CAP_ID=$(echo "$newObjs" | jq -r 'select (.objectType | contains("::package::UpgradeCap")).objectId')
+BP_COLLECTION_ID=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::collection::Collection") and contains("::battle_pass::BattlePass")) | .objectId')
+CS_COLLECTION_ID=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::collection::Collection") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
+BP_ROYALTY_STRATEGY=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::royalty_strategy_bps::BpsRoyaltyStrategy") and contains("::battle_pass::BattlePass")) | .objectId')
+CS_ROYALTY_STRATEGY=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::royalty_strategy_bps::BpsRoyaltyStrategy") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
+BP_DISPLAY=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::display::Display") and contains("::battle_pass::BattlePass")) | .objectId')
+CS_DISPLAY=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::display::Display") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
+BP_TRANSFER_POLICY_CAP=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::transfer_policy::TransferPolicyCap") and contains("::battle_pass::BattlePass")) | .objectId')
+CS_TRANSFER_POLICY_CAP=$(echo "$newObjs" | jq -r 'select(.objectType | contains("::transfer_policy::TransferPolicyCap") and contains("::cosmetic_skin::CosmeticSkin")) | .objectId')
+
+
 
 echo "Setting up environmental variables..."
 
 cat >.env <<-API_ENV
 SUI_NETWORK=$NETWORK
-PACKAGE_ID=$PACKAGE_ID
+DIGEST=$DIGEST
 UPGRADE_CAP_ID=$UPGRADE_CAP_ID
+PACKAGE_ID=$PACKAGE_ID
+BP_COLLECTION_ID=$BP_COLLECTION_ID
+CS_COLLECTION_ID=$CS_COLLECTION_ID
+BP_ROYALTY_STRATEGY=$BP_ROYALTY_STRATEGY
+CS_ROYALTY_STRATEGY=$CS_ROYALTY_STRATEGY
+BP_DISPLAY=$BP_DISPLAY
+CS_DISPLAY=$CS_DISPLAY
+BP_TRANSFER_POLICY_CAP=$BP_TRANSFER_POLICY_CAP
+CS_TRANSFER_POLICY_CAP=$CS_TRANSFER_POLICY_CAP
 ADMIN_PHRASE=
+ADMIN_ADDRESS=
+NON_CUSTODIAN_ADDRESS=
 API_ENV
 
 echo "Contract Deployment finished!"

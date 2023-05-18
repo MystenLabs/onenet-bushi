@@ -1,4 +1,8 @@
 build
-.DS_STORE
-.coverage_map.mvcov
-.trace
+sui.log*
+Move.lock
+node
+display
+.DS_Store
+**/node_modules
+.env
