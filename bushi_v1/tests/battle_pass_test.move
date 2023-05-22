@@ -456,7 +456,7 @@ module bushi::battle_pass_test{
 
     // next transaction by admin to mint a battle pass and send it to user kiosk
     test_scenario::next_tx(scenario, ADMIN);
-    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 1, scenario);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 70, 1000, 5, 1, scenario);
     // keep the id for later
     let battle_pass_id = battle_pass::id(&battle_pass);
     // deposit battle pass to user kiosk
