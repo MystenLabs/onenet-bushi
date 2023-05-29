@@ -69,7 +69,7 @@ module bushi::battle_pass{
     id: UID,
     description: String,
     // image url
-    img_url: String,
+    image_url: String,
     level: u64,
     level_cap: u64,
     xp: u64,
@@ -163,13 +163,13 @@ module bushi::battle_pass{
   /// mint a battle pass NFT
   /// by default, in_game = false
   public fun mint(
-    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
 
       let battle_pass = BattlePass { 
         id: object::new(ctx),
         description, 
-        img_url,
+        image_url,
         level,
         level_cap,
         xp,
@@ -193,29 +193,29 @@ module bushi::battle_pass{
   /// mint a battle pass NFT that has level = 1, xp = 0
   // we can specify and change default values
   public fun mint_default(
-    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
 
-      mint(mint_cap, description, img_url, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, rarity, season, ctx)
+      mint(mint_cap, description, image_url, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, rarity, season, ctx)
   }
 
   /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
-    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint(mint_cap, description, img_url, level, level_cap, xp, xp_to_next_level, rarity, season, ctx);
+      let battle_pass = mint(mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
   /// mint to launchpad with default values
   public fun mint_default_to_launchpad(
-    mint_cap: &MintCap<BattlePass>, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint_default(mint_cap, description, img_url, level_cap, xp_to_next_level, rarity, season, ctx);
+      let battle_pass = mint_default(mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }
@@ -302,7 +302,7 @@ module bushi::battle_pass{
     let fields = vector[
       utf8(b"name"),
       utf8(b"description"),
-      utf8(b"img_url"),
+      utf8(b"image_url"),
       utf8(b"level"),
       utf8(b"level_cap"),
       utf8(b"xp"),
@@ -314,7 +314,7 @@ module bushi::battle_pass{
       utf8(b"Battle Pass"),
       utf8(b"{description}"),
       // img_url can also be something like `utf8(b"bushi.com/{img_url})"` or `utf8(b"ipfs/{img_url})` to save on space
-      utf8(b"{img_url}"),
+      utf8(b"{image_url}"),
       utf8(b"{level}"),
       utf8(b"{level_cap}"),
       utf8(b"{xp}"),
@@ -342,8 +342,8 @@ module bushi::battle_pass{
   }
 
   #[test_only]
-  public fun img_url(battle_pass: &BattlePass): String {
-    battle_pass.img_url
+  public fun image_url(battle_pass: &BattlePass): String {
+    battle_pass.image_url
   }
 
   #[test_only]

@@ -539,23 +539,23 @@ module bushi::battle_pass_test{
   // === helpers ===
 
   // mint a battle pass with level = 1, xp = 0 (default)
-  fun mint_default(admin: address, description: String, img_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
+  fun mint_default(admin: address, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint_default(&mint_cap, description, img_url, level_cap, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
+    let battle_pass = battle_pass::mint_default(&mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
   }
 
-  fun mint(admin: address, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
+  fun mint(admin: address, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint(&mint_cap, description, img_url, level, level_cap, xp, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
+    let battle_pass = battle_pass::mint(&mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
   }
 
-  fun mint_to_launchpad(admin: address, description: String, img_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, scenario: &mut Scenario) {
+  fun mint_to_launchpad(admin: address, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, scenario: &mut Scenario) {
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    battle_pass::mint_to_launchpad(&mint_cap, description, img_url, level, level_cap, xp, xp_to_next_level, rarity, season, warehouse, test_scenario::ctx(scenario));
+    battle_pass::mint_to_launchpad(&mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, warehouse, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
   }
 
@@ -563,7 +563,7 @@ module bushi::battle_pass_test{
   fun ensure_correct_battle_pass_fields(user: address, intended_description: String, intended_url: String, intended_level: u64, intended_level_cap: u64, intended_xp: u64, intended_xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario){
     let battle_pass = test_scenario::take_from_address<BattlePass>(scenario, user);
     assert!(battle_pass::description(&battle_pass) == intended_description, EIncorrectDescription);
-    assert!(battle_pass::img_url(&battle_pass) == intended_url, EIncorrectUrl);
+    assert!(battle_pass::image_url(&battle_pass) == intended_url, EIncorrectUrl);
     assert!(battle_pass::level(&battle_pass) == intended_level, EIncorrectLevel);
     assert!(battle_pass::level_cap(&battle_pass) == intended_level_cap, EIncorrectLevelCap);
     assert!(battle_pass::xp(&battle_pass) == intended_xp, EIncorrectXP);
