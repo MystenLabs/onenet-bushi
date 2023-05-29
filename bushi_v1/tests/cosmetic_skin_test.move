@@ -501,16 +501,16 @@ module bushi::cosmetic_skin_test {
 
 
 
-  fun mint(name: String, description:String, img_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
+  fun mint(name: String, description:String, image_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    let cosmetic_skin = cosmetic_skin::mint(&mint_cap, name, description, img_url, level, level_cap, test_scenario::ctx(scenario));
+    let cosmetic_skin = cosmetic_skin::mint(&mint_cap, name, description, image_url, level, level_cap, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
     cosmetic_skin
   }
   
-  fun mint_to_launchpad(name: String, description:String, img_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, scenario: &mut Scenario) {
+  fun mint_to_launchpad(name: String, description:String, image_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, scenario: &mut Scenario) {
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    cosmetic_skin::mint_to_launchpad(&mint_cap, name, description, img_url, level, level_cap, warehouse, test_scenario::ctx(scenario));
+    cosmetic_skin::mint_to_launchpad(&mint_cap, name, description, image_url, level, level_cap, warehouse, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
   }
 
@@ -537,7 +537,7 @@ module bushi::cosmetic_skin_test {
   fun ensure_cosmetic_skin_fields_are_correct(cosmetic_skin: &CosmeticSkin, intended_name: String, intended_description: String, intended_img_url: String, intended_level: u64, intended_level_cap: u64, intended_in_game: bool){
     assert!(cosmetic_skin::name(cosmetic_skin) == intended_name, EIncorrectName);
     assert!(cosmetic_skin::description(cosmetic_skin) == intended_description, EIncorrectDescription);
-    assert!(cosmetic_skin::img_url(cosmetic_skin) == intended_img_url, EIncorrectUrl);
+    assert!(cosmetic_skin::image_url(cosmetic_skin) == intended_img_url, EIncorrectUrl);
     assert!(cosmetic_skin::level(cosmetic_skin) == intended_level, EIncorrectLevel);
     assert!(cosmetic_skin::level_cap(cosmetic_skin) == intended_level_cap, EIncorrectLevelCap);
     assert!(cosmetic_skin::in_game(cosmetic_skin) == intended_in_game, EIncorrectInGame);

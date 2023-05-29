@@ -68,7 +68,7 @@ module bushi::cosmetic_skin {
     id: UID,
     name: String,
     description: String,
-    img_url: String,
+    image_url: String,
     level: u64,
     level_cap: u64,
     in_game: bool,
@@ -152,13 +152,13 @@ module bushi::cosmetic_skin {
 
   /// mint a cosmetic skin
   /// by default in_game = false
-  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url: String, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
+  public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, image_url: String, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
     let cosmetic_skin = CosmeticSkin {
       id: object::new(ctx),
       name,
       description,
-      img_url,
+      image_url,
       level,
       level_cap,
       in_game: false,
@@ -177,10 +177,10 @@ module bushi::cosmetic_skin {
   /// mint to launchpad
   // this is for Clutchy integration
   public fun mint_to_launchpad(
-    mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, img_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
+    mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, image_url: String, level: u64, level_cap: u64, warehouse: &mut Warehouse<CosmeticSkin>, ctx: &mut TxContext
     ) {
 
-      let cosmetic_skin = mint(mint_cap, name, description, img_url, level, level_cap, ctx);
+      let cosmetic_skin = mint(mint_cap, name, description, image_url, level, level_cap, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
@@ -265,7 +265,7 @@ module bushi::cosmetic_skin {
     let fields = vector[
       utf8(b"name"),
       utf8(b"description"),
-      utf8(b"img_url"),
+      utf8(b"image_url"),
       utf8(b"level"),
       utf8(b"level_cap"),
     ];
@@ -273,7 +273,7 @@ module bushi::cosmetic_skin {
     let values = vector[
       utf8(b"{name}"),
       utf8(b"{description}"),
-      utf8(b"{img_url}"),
+      utf8(b"{image_url}"),
       utf8(b"{level}"),
       utf8(b"{level_cap}"),
     ];
@@ -303,8 +303,8 @@ module bushi::cosmetic_skin {
   }
 
   #[test_only]
-  public fun img_url(cosmetic_skin: &CosmeticSkin): String {
-    cosmetic_skin.img_url
+  public fun image_url(cosmetic_skin: &CosmeticSkin): String {
+    cosmetic_skin.image_url
   }
 
   #[test_only]
