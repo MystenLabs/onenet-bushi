@@ -14,3 +14,27 @@ const PUBLISHER_ID = process.env.PUBLISHER_ID!;
 const ONENET_PRIVATE_KEY = process.env.ONENET_PRIVATE_KEY!;
 const CUSTODIAL_WALLET_PRIVATE_KEY = process.env.CUSTODIAL_WALLET_PRIVATE_KEY!;
 const NON_CUSTODIAL_WALLET_PRIVATE_KEY = process.env.NON_CUSTODIAL_WALLET_PRIVATE_KEY!;
+
+/// helper to make keypair from private key that is in string format
+function getKeyPair(privateKey: string): Ed25519Keypair{
+    let privateKeyArray = Array.from(fromB64(privateKey));
+    privateKeyArray.shift();
+    return Ed25519Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
+  }
+
+  // make the keypairs
+const onenetKeyPair = getKeyPair(ONENET_PRIVATE_KEY);
+const custodialWalletKeyPair = getKeyPair(CUSTODIAL_WALLET_PRIVATE_KEY);
+const nonCustodialWalletKeyPair = getKeyPair(NON_CUSTODIAL_WALLET_PRIVATE_KEY);
+
+// addresses
+const onenetAddress = onenetKeyPair.getPublicKey().toSuiAddress();
+const custodialWalletAddress = custodialWalletKeyPair.getPublicKey().toSuiAddress();
+const nonCustodialWalletAddress = nonCustodialWalletKeyPair.getPublicKey().toSuiAddress();
+
+// initialize a provider for testnet
+const provider = new JsonRpcProvider(testnetConnection);
+// make a signers
+const onenet = new RawSigner(onenetKeyPair, provider);
+const custodialWallet = new RawSigner(custodialWalletKeyPair, provider);
+const nonCustodialWallet = new RawSigner(nonCustodialWalletKeyPair, provider);
