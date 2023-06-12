@@ -21,7 +21,7 @@ module bushi::battle_pass{
   use nft_protocol::royalty;
   use nft_protocol::royalty_strategy_bps;
   use nft_protocol::transfer_allowlist;
-  use nft_protocol::transfer_token;
+  use nft_protocol::transfer_token::{Self, TransferToken};
 
   use ob_kiosk::ob_kiosk;
 
@@ -29,6 +29,11 @@ module bushi::battle_pass{
 
   use ob_request::transfer_request;
   use ob_request::withdraw_request;
+  use ob_request::request::{Policy, WithNft};
+  use ob_request::withdraw_request::{WITHDRAW_REQ};
+
+
+ 
 
   use ob_utils::utils;
 
@@ -323,6 +328,23 @@ module bushi::battle_pass{
       utf8(b"{season}"),
     ];
     display::add_multiple<BattlePass>(display, fields, values);
+  }
+
+  /// Player calls this function from their external wallet.
+  /// Needs a TransferToken in order to withdraw a Battlepass from their kiosk.
+  public fun import_battlepass_to_cw(
+    transfer_token: TransferToken<BattlePass>,
+    player_kiosk: &mut Kiosk, 
+    battlepass_id: ID, 
+    withdraw_policy: &Policy<WithNft<BattlePass, WITHDRAW_REQ>>, 
+    ctx: &mut TxContext
+  ) {
+    let (battlepass, withdraw_request) = ob_kiosk::withdraw_nft_signed<BattlePass>(player_kiosk, battlepass_id, ctx);
+    
+    // Transfers NFT to the custodial wallet address
+    transfer_token::confirm(battlepass, transfer_token, withdraw_request::inner_mut(&mut withdraw_request));
+    withdraw_request::confirm<BattlePass>(withdraw_request, withdraw_policy);
+
   }
 
   // === test only ===

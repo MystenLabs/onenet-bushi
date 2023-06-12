@@ -25,7 +25,7 @@ if [ $# -ne 0 ]; then
 fi
 
 # publishes the script inside folder bushi_v1
-publish_res=$(sui client publish --gas-budget 2000000000 --json ../bushi_v1)
+publish_res=$(sui client publish --gas-budget 2000000000 --json ../bushi_v1 --skip-dependency-verification)
 
 echo ${publish_res} >.publish.res.json
 
@@ -72,6 +72,7 @@ CS_TRANSFER_POLICY_CAP=$CS_TRANSFER_POLICY_CAP
 ADMIN_PHRASE=
 ADMIN_ADDRESS=
 NON_CUSTODIAN_ADDRESS=
+ADMIN_PRIVATE_KEY=$(cat ~/.sui/sui_config/sui.keystore | jq -r '.[0]')
 API_ENV
 
 echo "Contract Deployment finished!"
