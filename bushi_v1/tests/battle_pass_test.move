@@ -124,6 +124,44 @@ module bushi::battle_pass_test{
   }
 
   #[test]
+  #[expected_failure(abort_code = ELevelGreaterThanLevelCap)]
+  fun test_mint_with_level_greater_than_level_cap(){
+
+    // module is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to create a battle pass with level > level_cap and try to transfer it to user
+    test_scenario::next_tx(scenario, ADMIN);
+    // in the following mint, level = 2, level_cap = 1
+    let battle_pass = mint(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 2, 1, 500, 2000, 3, 2, scenario);
+    transfer::public_transfer(battle_pass, USER);
+
+    test_scenario::end(scenario_val);
+
+  }
+
+  #[test]
+  #[expected_failure(abort_code = ELevelGreaterThanLevelCap)]
+  fun test_mint_default_with_level_greater_than_level_cap(){
+
+    // module is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    battle_pass::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to create a battle pass with level_cap = 0 and try to transfer it to user
+    // this is the only case where level > level_cap is allowed
+    test_scenario::next_tx(scenario, ADMIN);
+    let battle_pass = mint_default(ADMIN, utf8(SAMPLE_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 0, 1000, 2, 1, scenario);
+    transfer::public_transfer(battle_pass, USER);
+
+    test_scenario::end(scenario_val);
+
+  }
+
+  #[test]
   fun test_update(){
 
     // module is initialized by admin

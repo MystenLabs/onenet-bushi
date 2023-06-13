@@ -56,10 +56,6 @@ module bushi::cosmetic_skin {
   const ONENET_ROYALTY_ADDRESS: address = @0x1;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
 
-  /// consts for mint_default
-  const DEFAULT_INIT_LEVEL: u64 = 1;
-  const DEFAULT_INIT_XP: u64 = 0;
-
   /// one-time-witness for publisher
   struct COSMETIC_SKIN has drop {}
 
@@ -155,6 +151,9 @@ module bushi::cosmetic_skin {
   /// mint a cosmetic skin
   /// by default in_game = false
   public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, image_url: String, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
+
+    // make sure the level is not greater than the level cap
+    assert!(level <= level_cap, ELevelGreaterThanLevelCap);
 
     let cosmetic_skin = CosmeticSkin {
       id: object::new(ctx),
