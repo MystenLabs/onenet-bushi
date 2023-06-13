@@ -150,6 +150,9 @@ module bushi::cosmetic_skin {
   /// by default in_game = false
   public fun mint(mint_cap: &MintCap<CosmeticSkin>, name: String, description: String, image_url: String, level: u64, level_cap: u64, ctx: &mut TxContext): CosmeticSkin {
 
+    // make sure the level is not greater than the level cap
+    assert!(level <= level_cap, ELevelGreaterThanLevelCap);
+
     let cosmetic_skin = CosmeticSkin {
       id: object::new(ctx),
       name,

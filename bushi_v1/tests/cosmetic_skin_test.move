@@ -81,6 +81,26 @@ module bushi::cosmetic_skin_test {
   }
 
   #[test]
+  #[expected_failure(abort_code = ELevelGreaterThanLevelCap)]
+  fun test_mint_with_level_greater_than_level_cap(){
+
+    // test is initialized by admin
+    let scenario_val = test_scenario::begin(ADMIN);
+    let scenario = &mut scenario_val;
+    // init module
+    cosmetic_skin::init_test(test_scenario::ctx(scenario));
+
+    // next transaction by admin to mint a cosmetic skin with level > level_cap and try to transfer it to user
+    test_scenario::next_tx(scenario, ADMIN);
+    // in this test level = 4 and level_cap = 3
+    let cosmetic_skin = mint(utf8(b"Fairy"), utf8(DUMMY_DESCRIPTION_BYTES), utf8(DUMMY_URL_BYTES), 4, 3, scenario);
+    transfer::public_transfer(cosmetic_skin, USER);
+
+    // end test
+    test_scenario::end(scenario_val);
+  }
+
+  #[test]
   fun test_update(){
 
     // test is initialized by admin

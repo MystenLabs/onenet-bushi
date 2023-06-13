@@ -171,6 +171,9 @@ module bushi::battle_pass{
     mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
     ): BattlePass{
 
+    // make sure the level is not greater than the level cap
+    assert!(level <= level_cap, ELevelGreaterThanLevelCap);
+
       let battle_pass = BattlePass { 
         id: object::new(ctx),
         description, 
@@ -225,7 +228,7 @@ module bushi::battle_pass{
       warehouse::deposit_nft(warehouse, battle_pass);
   }
 
-  // ===Unlock updates ticket ====
+  // === Unlock updates ticket ====
 
   /// create an UnlockUpdatesTicket
   /// @param battle_pass_id: the id of the battle pass this ticket is issued for
