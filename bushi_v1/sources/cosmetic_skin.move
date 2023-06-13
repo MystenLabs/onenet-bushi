@@ -21,7 +21,7 @@ module bushi::cosmetic_skin {
   use nft_protocol::royalty;
   use nft_protocol::royalty_strategy_bps;
   use nft_protocol::transfer_allowlist;
-  use nft_protocol::transfer_token;
+  use nft_protocol::transfer_token::{Self, TransferToken};
 
   use ob_kiosk::ob_kiosk;
 
@@ -29,6 +29,8 @@ module bushi::cosmetic_skin {
 
   use ob_request::transfer_request;
   use ob_request::withdraw_request;
+  use ob_request::request::{Policy, WithNft};
+  use ob_request::withdraw_request::{WITHDRAW_REQ};
 
   use ob_utils::utils;
 
@@ -279,6 +281,23 @@ module bushi::cosmetic_skin {
     ];
 
     display::add_multiple<CosmeticSkin>(display, fields, values);
+  }
+
+  /// Player calls this function from their external wallet.
+  /// Needs a TransferToken in order to withdraw a Cosmetic Skin from their kiosk.
+  public fun import_cosmetic_skin_to_cw(
+    transfer_token: TransferToken<CosmeticSkin>,
+    player_kiosk: &mut Kiosk, 
+    cosmeticSkin_id: ID, 
+    withdraw_policy: &Policy<WithNft<CosmeticSkin, WITHDRAW_REQ>>, 
+    ctx: &mut TxContext
+  ) {
+    let (cosmeticSkin, withdraw_request) = ob_kiosk::withdraw_nft_signed<CosmeticSkin>(player_kiosk, cosmeticSkin_id, ctx);
+
+    // Transfers NFT to the custodial wallet address
+    transfer_token::confirm(cosmeticSkin, transfer_token, withdraw_request::inner_mut(&mut withdraw_request));
+    withdraw_request::confirm<CosmeticSkin>(withdraw_request, withdraw_policy);
+
   }
 
   #[test_only]
