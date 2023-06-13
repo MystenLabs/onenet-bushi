@@ -54,10 +54,6 @@ module bushi::cosmetic_skin {
   const ONENET_ROYALTY_ADDRESS: address = @0x1;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
 
-  /// consts for mint_default
-  const DEFAULT_INIT_LEVEL: u64 = 1;
-  const DEFAULT_INIT_XP: u64 = 0;
-
   /// one-time-witness for publisher
   struct COSMETIC_SKIN has drop {}
 
