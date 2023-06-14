@@ -579,14 +579,14 @@ module bushi::battle_pass_test{
   // mint a battle pass with level = 1, xp = 0 (default)
   fun mint_default(admin: address, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint_default(&mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
+    let battle_pass = battle_pass::mint_default(&mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, false, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
   }
 
   fun mint(admin: address, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, scenario: &mut Scenario): BattlePass{
     let mint_cap = test_scenario::take_from_address<MintCap<BattlePass>>(scenario, admin);
-    let battle_pass = battle_pass::mint(&mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, test_scenario::ctx(scenario));
+    let battle_pass = battle_pass::mint(&mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, false, test_scenario::ctx(scenario));
     test_scenario::return_to_address(admin, mint_cap);
     battle_pass
   }

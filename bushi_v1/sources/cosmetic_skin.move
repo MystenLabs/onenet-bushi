@@ -53,8 +53,8 @@ module bushi::cosmetic_skin {
   /// wallet addresses to deposit royalties
   // the below values are dummy
   // TODO: add addresses here
-  const ONENET_ROYALTY_ADDRESS: address = @0x1;
-  const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
+  const ONENET_ROYALTY_ADDRESS: address = @0x4f9dbfc5ee4a994987e810fa451cba0688f61d747ac98d091dbbadee50337c3b;
+  const CLUTCHY_ROYALTY_ADDRESS: address = @0x61028a4c388514000a7de787c3f7b8ec1eb88d1bd2dbc0d3dfab37078e39630f;
 
   /// one-time-witness for publisher
   struct COSMETIC_SKIN has drop {}
