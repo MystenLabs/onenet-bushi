@@ -14,6 +14,9 @@ FAUCET=https://localhost:9000/gas
 
 # If otherwise specified chose testnet or devnet
 if [ $# -ne 0 ]; then
+ if [ $1 = "mainnet" ]; then
+    NETWORK="https://fullnode.mainnet.sui.io:443"
+  fi
   if [ $1 = "testnet" ]; then
     NETWORK="https://fullnode.testnet.sui.io:443"
     FAUCET="https://faucet.testnet.sui.io/gas"
