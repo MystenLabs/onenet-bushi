@@ -56,11 +56,11 @@ module bushi::battle_pass{
   /// wallet addresses to deposit royalties
   // the below values are dummy
   // TODO: add addresses here
-  const ONENET_ROYALTY_ADDRESS: address = @0x1;
-  const CLUTCHY_ROYALTY_ADDRESS: address = @0x2;
+  const ONENET_ROYALTY_ADDRESS: address = @0x4f9dbfc5ee4a994987e810fa451cba0688f61d747ac98d091dbbadee50337c3b;
+  const CLUTCHY_ROYALTY_ADDRESS: address = @0x61028a4c388514000a7de787c3f7b8ec1eb88d1bd2dbc0d3dfab37078e39630f;
 
   /// consts for mint_default
-  const DEFAULT_INIT_LEVEL: u64 = 1;
+  const DEFAULT_INIT_LEVEL: u64 = 0;
   const DEFAULT_INIT_XP: u64 = 0;
 
   /// One-time-witness
@@ -168,7 +168,7 @@ module bushi::battle_pass{
   /// mint a battle pass NFT
   /// by default, in_game = false
   public fun mint(
-    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, in_game: bool, ctx: &mut TxContext
     ): BattlePass{
 
     // make sure the level is not greater than the level cap
@@ -184,7 +184,7 @@ module bushi::battle_pass{
         xp_to_next_level,
         rarity,
         season,
-        in_game: false,
+        in_game,
       };
 
       // emit a mint event
@@ -201,10 +201,10 @@ module bushi::battle_pass{
   /// mint a battle pass NFT that has level = 1, xp = 0
   // we can specify and change default values
   public fun mint_default(
-    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, ctx: &mut TxContext
+    mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, in_game: bool, ctx: &mut TxContext
     ): BattlePass{
 
-      mint(mint_cap, description, image_url, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, rarity, season, ctx)
+      mint(mint_cap, description, image_url, DEFAULT_INIT_LEVEL, level_cap, DEFAULT_INIT_XP, xp_to_next_level, rarity, season, in_game, ctx)
   }
 
   /// mint to launchpad
@@ -213,7 +213,7 @@ module bushi::battle_pass{
     mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level: u64, level_cap: u64, xp: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint(mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, ctx);
+      let battle_pass = mint(mint_cap, description, image_url, level, level_cap, xp, xp_to_next_level, rarity, season, false, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }
@@ -223,7 +223,7 @@ module bushi::battle_pass{
     mint_cap: &MintCap<BattlePass>, description: String, image_url: String, level_cap: u64, xp_to_next_level: u64, rarity: u64, season: u64, warehouse: &mut Warehouse<BattlePass>, ctx: &mut TxContext
     ){
 
-      let battle_pass = mint_default(mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, ctx);
+      let battle_pass = mint_default(mint_cap, description, image_url, level_cap, xp_to_next_level, rarity, season, false, ctx);
       // deposit to warehouse
       warehouse::deposit_nft(warehouse, battle_pass);
   }

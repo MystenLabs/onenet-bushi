@@ -1,54 +1,25 @@
+
 [package]
 name = "bushi"
 version = "0.0.1"
 
-[dependencies.Sui]
-git = "https://github.com/MystenLabs/sui.git"
-subdir = "crates/sui-framework/packages/sui-framework"
-# testnet-0.33.0
-rev = "38c31cdd0f2ae3963d1e06f00c766cd7f90a7be6"
+[dependencies.Launchpad]
+git = "https://github.com/Origin-Byte/nft-protocol.git"
+subdir = "contracts/launchpad"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
 
 [dependencies.NftProtocol]
-git = "https://github.com/Origin-Byte/nft-protocol"
+git = "https://github.com/Origin-Byte/nft-protocol.git"
 subdir = "contracts/nft_protocol"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
-
-[dependencies.Permissions]
-git = "https://github.com/Origin-Byte/nft-protocol"
-subdir = "contracts/permissions"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
-
-[dependencies.Launchpad]
-git = "https://github.com/Origin-Byte/nft-protocol"
-subdir = "contracts/launchpad"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
 
 [dependencies.LiquidityLayerV1]
-git = "https://github.com/Origin-Byte/nft-protocol"
+git = "https://github.com/Origin-Byte/nft-protocol.git"
 subdir = "contracts/liquidity_layer_v1"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
-
-[dependencies.Request]
-git = "https://github.com/Origin-Byte/nft-protocol"
-subdir = "contracts/request"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
-
-[dependencies.Kiosk]
-git = "https://github.com/Origin-Byte/nft-protocol"
-subdir = "contracts/kiosk"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
-
-[dev-dependencies.Utils]
-git = "https://github.com/Origin-Byte/nft-protocol"
-subdir = "contracts/utils"
-# testnet-0.33.0
-rev = "b3c85b735f047a17298d2640357bc75a67538890"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
 
 [addresses]
 bushi =  "0x0"
