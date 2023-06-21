@@ -276,6 +276,43 @@ module bushi::battle_pass{
     battle_pass.xp_to_next_level = new_xp_to_next_level;
   }
 
+  // === Dynamic field features ===
+
+  public entry fun init_borrow_policy(
+    publisher: &sui::package::Publisher,
+    ctx: &mut sui::tx_context::TxContext,
+  ) {
+    let (borrow_policy, borrow_policy_cap) =
+        ob_request::borrow_request::init_policy<BattlePass>(publisher, ctx);
+
+    sui::transfer::public_share_object(borrow_policy);
+    sui::transfer::public_transfer(borrow_policy_cap, sui::tx_context::sender(ctx));
+  }
+
+  public fun set_image_url(
+    _delegated_witness: ob_permissions::witness::Witness<BattlePass>,
+    nft: &mut BattlePass,
+    image_url: String,
+  ) {
+    nft.image_url = image_url;
+  }
+
+  public entry fun set_image_url_in_kiosk(
+    publisher: &sui::package::Publisher,
+    kiosk: &mut sui::kiosk::Kiosk,
+    nft_id: sui::object::ID,
+    image_url: String,
+    policy: &ob_request::request::Policy<ob_request::request::WithNft<BattlePass, ob_request::borrow_request::BORROW_REQ>>,
+    ctx: &mut sui::tx_context::TxContext,
+  ) {
+    let delegated_witness = ob_permissions::witness::from_publisher(publisher);
+    let borrow = ob_kiosk::ob_kiosk::borrow_nft_mut<BattlePass>(kiosk, nft_id, std::option::none(), ctx);
+
+    let nft: &mut BattlePass = ob_request::borrow_request::borrow_nft_ref_mut(delegated_witness, &mut borrow);
+    set_image_url(delegated_witness, nft, image_url);
+
+    ob_kiosk::ob_kiosk::return_nft<Witness, BattlePass>(kiosk, borrow, policy);
+  }
 
   // === exports ===
 
