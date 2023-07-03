@@ -2,6 +2,7 @@
 [package]
 name = "bushi"
 version = "0.0.1"
+published-at = "0x6d08fef08074c0cd1eba57c46c5903c2fdc3e3a6680ef46d6f6abc7ec1669aee"
 
 [dependencies.Launchpad]
 git = "https://github.com/Origin-Byte/nft-protocol.git"
