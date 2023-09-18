@@ -2,8 +2,10 @@ module bushi::cosmetic_skin {
 
   use std::option;
   use std::string::{utf8, String};
+  use std::vector;
 
   use sui::display::{Self, Display};
+  use sui::dynamic_field as df;
   use sui::kiosk::Kiosk;
   use sui::object::{Self, ID, UID};
   use sui::package;
@@ -41,10 +43,10 @@ module bushi::cosmetic_skin {
   const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
   const ELevelGreaterThanLevelCap: u64 = 2;
+  const EDFKeysAndValuesNumberMismatch: u64 = 3;
+  const EDynamicFieldDoesNotExist: u64 = 4;
 
   /// royalty cut consts
-  // TODO: specify the exact values
-  // onenet should take 2% royalty
   const COLLECTION_ROYALTY: u16 = 3_00; // this is 3%
 
   const ONENET_ROYALTY_CUT: u16 = 95_00; // 95_00 is 95%
@@ -186,7 +188,7 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  // ===Unlock updates ticket ====
+  // === Unlock updates ticket ====
 
   /// create an UnlockUpdatesTicket
   /// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is issued for
@@ -231,6 +233,57 @@ module bushi::cosmetic_skin {
 
     cosmetic_skin.level = new_level;
   }
+
+  // update dynamic fields of stats only if in_game = true
+  // for each field name, if it does not exist, we add a field with this name
+  public fun update_or_add_dfs(
+    cosmetic_skin: &mut CosmeticSkin,
+    keys: vector<String>,
+    // TODO: determine if below should be u64 or String
+    values: vector<String>,
+  ) {
+
+    assert!(cosmetic_skin.in_game == true, ECannotUpdate);
+
+    let total = vector::length(&keys);
+
+    assert!(total == vector::length(&values), EDFKeysAndValuesNumberMismatch);
+
+    let i = 0;
+    while (i < total){
+      let key = *vector::borrow(&keys, i);
+      let new_value = *vector::borrow<String>(&values, i);
+      // if a df with this key already exists
+      if (df::exists_<String>(&cosmetic_skin.id, key)) {
+        let old_value = df::borrow_mut<String, String>(&mut cosmetic_skin.id, key);
+        *old_value = new_value;
+      } else {
+        df::add<String, String>(&mut cosmetic_skin.id, key, new_value);
+      };
+      i = i + 1;
+    }
+  }
+
+  // remove some of the stats
+  // aborts if the stats we want to remove do not exist
+  public fun remove_stats(
+    cosmetic_skin: &mut CosmeticSkin,
+    keys: vector<String>,
+  ) {
+
+    assert!(cosmetic_skin.in_game == true, ECannotUpdate);
+
+    let total = vector::length(&keys);
+    let i = 0;
+    while (i < total) {
+      let key = *vector::borrow<String>(&keys, i);
+      // if dynamic field with key `key` does not exist, throw an error
+      assert!(df::exists_<String>(&cosmetic_skin.id, key), EDynamicFieldDoesNotExist);
+      df::remove<String, u64>(&mut cosmetic_skin.id, key);
+      i = i + 1;
+    };
+  }
+
   // === exports ===
 
   /// export the cosmetic skin to a player's kiosk
