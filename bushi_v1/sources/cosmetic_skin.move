@@ -53,8 +53,7 @@ module bushi::cosmetic_skin {
   const CLUTCHY_ROYALTY_CUT: u16 = 5_00;
 
   /// wallet addresses to deposit royalties
-  // the below values are dummy
-  // TODO: add addresses here
+  /// TODO: fix/determine royalties
   const ONENET_ROYALTY_ADDRESS: address = @0x4f9dbfc5ee4a994987e810fa451cba0688f61d747ac98d091dbbadee50337c3b;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x61028a4c388514000a7de787c3f7b8ec1eb88d1bd2dbc0d3dfab37078e39630f;
 
@@ -81,7 +80,6 @@ module bushi::cosmetic_skin {
     cosmetic_skin_id: ID,
   }
 
-  // TODO: dynamic field keys structs for stats and game id
   // dynamic field key for game asset id
   struct GameAssetIDKey has store, copy, drop {}
 
@@ -116,6 +114,7 @@ module bushi::cosmetic_skin {
     let royalty_addresses = vector[ONENET_ROYALTY_ADDRESS, CLUTCHY_ROYALTY_ADDRESS];
     // take a delegated witness from the publisher
     let delegated_witness = witness::from_publisher(&publisher);
+    // TODO: determine royalties
     royalty_strategy_bps::create_domain_and_add_strategy(delegated_witness,
         &mut collection,
         royalty::from_shares(
