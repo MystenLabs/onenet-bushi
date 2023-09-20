@@ -589,7 +589,6 @@ module bushi::cosmetic_skin_test {
     cosmetic_skin
   }
 
-  // TODO: change this to mint_with_stats
   fun mint_with_dfs(scenario: &mut Scenario): CosmeticSkin {
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
     let cosmetic_skin = cosmetic_skin::mint_with_dfs(
