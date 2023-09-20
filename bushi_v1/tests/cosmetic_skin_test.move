@@ -46,6 +46,7 @@ module bushi::cosmetic_skin_test {
   const EIncorrectLevelCap: u64 = 4;
   const EObjectShouldHaveNotBeenFound: u64 = 5;
   const EIncorrectInGame: u64 = 6;
+  const EDFNotSetProperly: u64 = 7;
 
   // const addresses
   const ADMIN: address = @0x1;
@@ -530,7 +531,7 @@ module bushi::cosmetic_skin_test {
 
     // next transaction by ADMIN to mint a Cosmetic Skin and transfer it to the user
     test_scenario::next_tx(scenario, ADMIN);
-    let cosmetic_skin = mint_dummy(scenario);
+    let cosmetic_skin = mint_with_dfs(scenario);
     transfer::public_transfer(cosmetic_skin, USER);
 
     // next transaction by ADMIN to issue an unlock updates ticket for user
@@ -547,27 +548,39 @@ module bushi::cosmetic_skin_test {
     test_scenario::next_tx(scenario, USER);
     unlock_updates(USER, scenario);
 
-    // next transaction by user to add dfs to their 
-
+    // next transaction by user to make sure their cosmetic skin has stats with proper values
     test_scenario::next_tx(scenario, USER);
     let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, USER);
-    let keys = vector<String>[utf8(b"asset_id"), utf8(b"kills")];
-    let values = vector<String>[utf8(b"11111"), utf8(b"10")];
-    cosmetic_skin::update_or_add_dfs(
+    // the stats we have added is: games = 0, kills = 0.
+    let stat_name_1 = utf8(b"games");
+    let stat_name_2 = utf8(b"kills");
+    let stat_value_1 = utf8(b"0");
+    let stat_value_2 = utf8(b"0");
+    assert!(cosmetic_skin::get_stat_value(&cosmetic_skin, stat_name_1) == stat_value_1, EDFNotSetProperly);
+    assert!(cosmetic_skin::get_stat_value(&cosmetic_skin, stat_name_2) == stat_value_2, EDFNotSetProperly);
+    test_scenario::return_to_address(USER, cosmetic_skin);
+
+    // next transaction by user to update their cosmetic skin kills stat
+    test_scenario::next_tx(scenario, USER);
+    let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, USER);
+    let stat_names = vector<String>[utf8(b"kills")];
+    let stat_values = vector<String>[utf8(b"10")];
+    cosmetic_skin::update_or_add_stats(
       &mut cosmetic_skin,
-      keys,
-      values,
+      stat_names,
+      stat_values,
     );
+    test_scenario::return_to_address(USER, cosmetic_skin);
+
+    // next transaction by user to make sure kills are updated properly
+    test_scenario::next_tx(scenario, USER);
+    let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, USER);
+    let kills_value = cosmetic_skin::get_stat_value(&cosmetic_skin, utf8(b"kills"));
+    assert!(kills_value == utf8(b"10"), EDFNotSetProperly);
     test_scenario::return_to_address(USER, cosmetic_skin);
 
     test_scenario::end(scenario_val);
   }
-
-  // TODO:
-  // test to edit stats when in-game is false
-  // test to remove stats
-
-
 
   fun mint(name: String, description:String, image_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
@@ -576,16 +589,21 @@ module bushi::cosmetic_skin_test {
     cosmetic_skin
   }
 
-  fun mint_dummy(scenario: &mut Scenario): CosmeticSkin {
+  // TODO: change this to mint_with_stats
+  fun mint_with_dfs(scenario: &mut Scenario): CosmeticSkin {
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
-    let cosmetic_skin = cosmetic_skin::mint(
+    let cosmetic_skin = cosmetic_skin::mint_with_dfs(
       &mint_cap, 
-      utf8(b"Fairy"), 
-      utf8(DUMMY_DESCRIPTION_BYTES), 
-      utf8(DUMMY_URL_BYTES), 
-      1, 
-      3, 
-      test_scenario::ctx(scenario));
+      utf8(b"Fairy"), // name 
+      utf8(DUMMY_DESCRIPTION_BYTES), //description
+      utf8(DUMMY_URL_BYTES), //url
+      1, // level
+      3, // level cap
+      utf8(b"1111"), // game asset id
+      vector<String>[utf8(b"games"), utf8(b"kills")], // stat names
+      vector<String>[utf8(b"0"), utf8(b"0")], // values
+      test_scenario::ctx(scenario)
+      ); 
     test_scenario::return_to_address(ADMIN, mint_cap);
     cosmetic_skin
   }
