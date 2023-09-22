@@ -41,16 +41,18 @@ module bushi::cosmetic_skin {
   const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
   const ELevelGreaterThanLevelCap: u64 = 2;
-  const ECosmeticSkinNotInGame: u64 = 3;
 
   /// royalty cut consts
+  // TODO: specify the exact values
+  // onenet should take 2% royalty
   const COLLECTION_ROYALTY: u16 = 3_00; // this is 3%
 
   const ONENET_ROYALTY_CUT: u16 = 95_00; // 95_00 is 95%
   const CLUTCHY_ROYALTY_CUT: u16 = 5_00;
 
   /// wallet addresses to deposit royalties
-  /// TODO: fix/determine royalties
+  // the below values are dummy
+  // TODO: add addresses here
   const ONENET_ROYALTY_ADDRESS: address = @0x4f9dbfc5ee4a994987e810fa451cba0688f61d747ac98d091dbbadee50337c3b;
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x61028a4c388514000a7de787c3f7b8ec1eb88d1bd2dbc0d3dfab37078e39630f;
 
@@ -106,7 +108,6 @@ module bushi::cosmetic_skin {
     let royalty_addresses = vector[ONENET_ROYALTY_ADDRESS, CLUTCHY_ROYALTY_ADDRESS];
     // take a delegated witness from the publisher
     let delegated_witness = witness::from_publisher(&publisher);
-    // TODO: determine royalties
     royalty_strategy_bps::create_domain_and_add_strategy(delegated_witness,
         &mut collection,
         royalty::from_shares(
@@ -185,7 +186,7 @@ module bushi::cosmetic_skin {
       warehouse::deposit_nft(warehouse, cosmetic_skin);
   }
 
-  // === Unlock updates ticket ====
+  // ===Unlock updates ticket ====
 
   /// create an UnlockUpdatesTicket
   /// @param cosmetic_skin_id: the id of the cosmetic skin this ticket is issued for
@@ -230,8 +231,6 @@ module bushi::cosmetic_skin {
 
     cosmetic_skin.level = new_level;
   }
-
-
   // === exports ===
 
   /// export the cosmetic skin to a player's kiosk
@@ -300,39 +299,6 @@ module bushi::cosmetic_skin {
 
   }
 
-  // === Accesors ===
-
-  public fun admin_get_mut_uid(
-    _: &MintCap<CosmeticSkin>,
-    cosmetic_skin: &mut CosmeticSkin
-  ): &mut UID {
-    &mut cosmetic_skin.id
-  }
-
-  /// get a mutable reference of UID of Cosmetic Skin
-  /// only if Cosmetic Skin is in-game
-  /// (aborts otherwise)
-  public fun cw_get_mut_uid(
-    cosmetic_skin: &mut CosmeticSkin,
-  ): &mut UID {
-
-    assert!(cosmetic_skin.in_game == true, ECosmeticSkinNotInGame);
-
-    &mut cosmetic_skin.id
-  }
-
-  public fun get_immut_uid(
-    cosmetic_skin: &CosmeticSkin
-  ): &UID {
-    &cosmetic_skin.id
-  }
-
-  public fun in_game(
-    cosmetic_skin: &CosmeticSkin,
-  ): bool {
-    cosmetic_skin.in_game
-  }
-
   #[test_only]
   public fun init_test(ctx: &mut TxContext){
       let otw = COSMETIC_SKIN {};
@@ -369,4 +335,8 @@ module bushi::cosmetic_skin {
     cosmetic_skin.level_cap
   }
 
+  #[test_only]
+  public fun in_game(cosmetic_skin: &CosmeticSkin): bool {
+    cosmetic_skin.in_game
+  }
 }

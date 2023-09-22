@@ -519,6 +519,8 @@ module bushi::cosmetic_skin_test {
 
   }
 
+
+
   fun mint(name: String, description:String, image_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): CosmeticSkin{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
     let cosmetic_skin = cosmetic_skin::mint(&mint_cap, name, description, image_url, level, level_cap, test_scenario::ctx(scenario));
@@ -532,14 +534,14 @@ module bushi::cosmetic_skin_test {
     test_scenario::return_to_address(ADMIN, mint_cap);
   }
 
-  public fun create_unlock_updates_ticket(cosmetic_skin_id: ID, scenario: &mut Scenario): UnlockUpdatesTicket{
+  fun create_unlock_updates_ticket(cosmetic_skin_id: ID, scenario: &mut Scenario): UnlockUpdatesTicket{
     let mint_cap = test_scenario::take_from_address<MintCap<CosmeticSkin>>(scenario, ADMIN);
     let unlock_updates_ticket = cosmetic_skin::create_unlock_updates_ticket(&mint_cap, cosmetic_skin_id, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
     unlock_updates_ticket
   }
 
-  public fun unlock_updates(user: address, scenario: &mut Scenario){
+  fun unlock_updates(user: address, scenario: &mut Scenario){
     let unlock_updates_ticket = test_scenario::take_from_address<UnlockUpdatesTicket>(scenario, user);
     let cosmetic_skin = test_scenario::take_from_address<CosmeticSkin>(scenario, user);
     cosmetic_skin::unlock_updates(&mut cosmetic_skin, unlock_updates_ticket);
