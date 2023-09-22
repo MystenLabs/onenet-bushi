@@ -1,0 +1,26 @@
+
+[package]
+name = "bushi"
+version = "0.0.1"
+published-at = "0x6d08fef08074c0cd1eba57c46c5903c2fdc3e3a6680ef46d6f6abc7ec1669aee"
+
+[dependencies.Launchpad]
+git = "https://github.com/Origin-Byte/nft-protocol.git"
+subdir = "contracts/launchpad"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
+
+[dependencies.NftProtocol]
+git = "https://github.com/Origin-Byte/nft-protocol.git"
+subdir = "contracts/nft_protocol"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
+
+[dependencies.LiquidityLayerV1]
+git = "https://github.com/Origin-Byte/nft-protocol.git"
+subdir = "contracts/liquidity_layer_v1"
+# mainnet
+rev = "93f6cd0b8966354b1b00e7d798cbfddaa867a07b"
+
+[addresses]
+bushi =  "0x0"
