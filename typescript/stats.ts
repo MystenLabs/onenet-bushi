@@ -211,18 +211,26 @@ async function getStat(
 ): Promise<string> {
   const dynamicFieldResult = await provider.getDynamicFieldObject({
     parentId: cosmeticSkin,
-    name: {type: `${packageID}::stats::StatKey`,
-    value: { name: statName }},
+    name: { type: `${packageID}::stats::StatKey`, value: { name: statName } },
   });
 
   let content: any = dynamicFieldResult.data?.content;
   return content.fields.value as string;
 }
 
-// TODO:
-// async function getGameAssetId(
-
-// )
+async function getGameAssetId(cosmeticSkin: string): Promise<string> {
+  const dynamicFieldResult = await provider.getDynamicFieldObject({
+    parentId: cosmeticSkin,
+    // found 'name' field by console-logging
+    // 'value' field is necessary (fullnode throws error), although sdk does not complain
+    name: {
+      type: `${packageID}::stats::GameAssetIDKey`,
+      value: { dummy_field: false },
+    },
+  });
+  let content: any = dynamicFieldResult.data?.content;
+  return content.fields.value as string;
+}
 
 // Note: console.log the results if you need them
 // 1. create a cosmetic skin and transfer it to user: mintWithDfs
@@ -231,6 +239,7 @@ async function getStat(
 // 4. unlock updates for the cosmetic skin: unlockUpdates
 // 5. update 'kills' value: udateOrAddStats
 // 6. print the value of kills: getStat
+// 7. find its game_asset_id: getGameAssetId
 async function main() {
   // or just set an address
   const userAddress = userKeyPair.getPublicKey().toSuiAddress();
@@ -281,9 +290,12 @@ async function main() {
   // console.log(updateOrAddStatsResult);
 
   // now check the kills updated value
-  const killsStatValue = await getStat(cosmeticSkin, 'kills');
-  console.log('New value of kills is: ' + killsStatValue);
+  const killsStatValue = await getStat(cosmeticSkin, "kills");
+  console.log("New value of kills is: " + killsStatValue);
+
+  // find game asset id
+  gameAssetId = await getGameAssetId(cosmeticSkin);
+  console.log("Game asset id is: " + gameAssetId);
 }
 
 main();
-
