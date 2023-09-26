@@ -1,23 +1,24 @@
 module bushi::stats{
 
+  // Standard library imports
   use std::string::{String};
   use std::vector;
-
+  
+  // SUI imports
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
 
   use nft_protocol::mint_cap::MintCap;
 
   use bushi::cosmetic_skin::{Self, CosmeticSkin};
-
+  // Error codes
   const EDFKeysAndValuesNumberMismatch: u64 = 0;
   const EDynamicFieldDoesNotExist: u64 = 1;
-  const ECosmeticSkinNotInGame: u64 = 2;
-  const ECannotUpdate: u64 = 3;
+  const ECannotUpdate: u64 = 2;
 
-  // dynamic field key for game asset id
+  // GameAssetIDKey object for for game asset id
   struct GameAssetIDKey has store, copy, drop {}
-
+  // StatKey object for dynamic field key name: kills | games
   struct StatKey has store, copy, drop { name: String }
 
 
@@ -75,7 +76,6 @@ module bushi::stats{
   public fun update_or_add_stats(
     cosmetic_skin: &mut CosmeticSkin,
     stat_names: vector<String>,
-    // TODO: determine if below should be u64 or String
     stat_values: vector<String>,
   ) {
 

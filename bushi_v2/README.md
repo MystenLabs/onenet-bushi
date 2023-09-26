@@ -325,3 +325,20 @@ The module `cosmetic_skins_test` contains tests for the `cosmetic_skins` module.
 - `test_mint` and `test_update` test whether cosmetic skins are minted and updated with the intended values.
 - `test_update_when_reached_level_cap` (has expected failure) tests whether we can update the `level` of a cosmetic skin with a value greater than `level_cap`.
 - `test_lock` tests whether we can update the `level` of the cosmetic skin after `lock_updates` has been called.
+
+
+## Upgrade Module `bushi::stats`
+
+More details about how upgrades work can be found here: https://docs.sui.io/build/package-upgrades
+### How to deploy the upgrade
+1. Make sure you have the .env file with the values that were produced when you deployed the original package (v1).
+1. Edit the `Move.toml` file located in the bushi_v2 folder and change / add the `published-at` value to the original package address (v1).
+1. Make sure you are in the correct network on the sui cli and have enough funds and run the upgrade script `./upgrade.sh`.
+1. A new `.env.upgrade` file will be created with the new package address.
+
+#### How to test upgrading (multiple times)
+1. To test upgrading from v1 to v2, simply use the publish script (should publish v1). Then  run the upgrade script with the above instructions.
+
+### Some notes on how to interact with upgraded packages
+1. For types always use as a package prefix the module that first declared them. For example `0xAddress_V1::bushi::CosmeticSkin` and not `0xAddress_v2::bushi::CosmeticSkin`.
+1. For functions always use the latest package address. Since that one is a superset of the previous package functionality. For example `0xAddress_V2::bushi::mint_cosmetic_skin` and not `0xAddress_v1::bushi::mint_cosmetic_skin`.

@@ -12,6 +12,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const packageID = process.env.PACKAGE_ID!;
+const newPackageID = process.env.NEW_PACKAGE_ID;
 const mintCap = process.env.CS_MINT_CAP!;
 
 /// helper to make keypair from private key that is in string format
@@ -44,7 +45,7 @@ async function mintWithDfs(
 
   // get a cosmetic skin
   let [cosmetic_skin] = txb.moveCall({
-    target: `${packageID}::stats::mint_with_dfs`,
+    target: `${newPackageID}::stats::mint_with_dfs`,
     arguments: [
       txb.object(mintCap),
       txb.pure("fairy skin"), // name
@@ -82,7 +83,7 @@ async function createUnlockUpdatesTicket(
   let txb = new TransactionBlock();
 
   const unlockUpdatesTicket = txb.moveCall({
-    target: `${packageID}::cosmetic_skin::create_unlock_updates_ticket`,
+    target: `${newPackageID}::cosmetic_skin::create_unlock_updates_ticket`,
     arguments: [txb.object(mintCap), txb.pure(cosmeticSkinId)],
   });
 
@@ -108,7 +109,7 @@ async function unlockUpdates(
   let txb = new TransactionBlock();
 
   txb.moveCall({
-    target: `${packageID}::cosmetic_skin::unlock_updates`,
+    target: `${newPackageID}::cosmetic_skin::unlock_updates`,
     arguments: [txb.object(cosmeticSkin), txb.object(unlockUpdatesTicket)],
   });
 
@@ -131,7 +132,7 @@ async function udateOrAddStats(
   let txb = new TransactionBlock();
 
   txb.moveCall({
-    target: `${packageID}::stats::update_or_add_stats`,
+    target: `${newPackageID}::stats::update_or_add_stats`,
     arguments: [
       txb.object(cosmeticSkin),
       txb.pure(["kills"]),
@@ -172,7 +173,7 @@ async function readStatAndGameAssetIdValues(cosmeticSkin: string) {
 
     // check the type of the dynamic field key
     // if it is a game_asset_id
-    if (dynamicFieldKey.type == `${packageID}::stats::GameAssetIDKey`) {
+    if (dynamicFieldKey.type == `${newPackageID}::stats::GameAssetIDKey`) {
       // ask the provider
       let dynamicFieldResult = await provider.getDynamicFieldObject({
         parentId: cosmeticSkin,
@@ -184,7 +185,7 @@ async function readStatAndGameAssetIdValues(cosmeticSkin: string) {
       gameAssetId = content.fields.value;
 
       // else if it is a stat
-    } else if (dynamicFieldKey.type == `${packageID}::stats::StatKey`) {
+    } else if (dynamicFieldKey.type == `${newPackageID}::stats::StatKey`) {
       // TODO: when updating to the new sdk version, it might be possible that this is dynamicFieldKey.value instead of value.name
       let statName = dynamicFieldKey.value.name;
       let dynamicFieldResult = await provider.getDynamicFieldObject({
@@ -211,7 +212,7 @@ async function getStat(
 ): Promise<string> {
   const dynamicFieldResult = await provider.getDynamicFieldObject({
     parentId: cosmeticSkin,
-    name: { type: `${packageID}::stats::StatKey`, value: { name: statName } },
+    name: { type: `${newPackageID}::stats::StatKey`, value: { name: statName } },
   });
 
   let content: any = dynamicFieldResult.data?.content;
@@ -224,7 +225,7 @@ async function getGameAssetId(cosmeticSkin: string): Promise<string> {
     // found 'name' field by console-logging
     // 'value' field is necessary (fullnode throws error), although sdk does not complain
     name: {
-      type: `${packageID}::stats::GameAssetIDKey`,
+      type: `${newPackageID}::stats::GameAssetIDKey`,
       value: { dummy_field: false },
     },
   });
@@ -233,13 +234,13 @@ async function getGameAssetId(cosmeticSkin: string): Promise<string> {
 }
 
 // Note: console.log the results if you need them
-// 1. create a cosmetic skin and transfer it to user: mintWithDfs
-// 2. print initial stat values and game asset ID of the cosmetic skin: readStatAndGameAssetIdValues
-// 3. create unlock updates ticket and transfer it to user: createUnlockUpdatesTicket
-// 4. unlock updates for the cosmetic skin: unlockUpdates
-// 5. update 'kills' value: udateOrAddStats
-// 6. print the value of kills: getStat
-// 7. find its game_asset_id: getGameAssetId
+// 1. create a cosmetic skin and transfer it to user: function -> mintWithDfs
+// 2. print initial stat values and game asset ID of the cosmetic skin: function -> readStatAndGameAssetIdValues
+// 3. create unlock updates ticket and transfer it to user: function -> createUnlockUpdatesTicket
+// 4. unlock updates for the cosmetic skin: function -> unlockUpdates
+// 5. update 'kills' value: function -> udateOrAddStats
+// 6. print the value of kills: function -> getStat
+// 7. find its game_asset_id: function -> getGameAssetId
 async function main() {
   // or just set an address
   const userAddress = userKeyPair.getPublicKey().toSuiAddress();
