@@ -18,6 +18,7 @@ module bushi::stats{
     const ESizeOfNamesAndValuesMismatch: u64 = 0;
     const ECannotUpdate: u64 = 1;
     const EDFKeysAndValuesSizeMismatch: u64 = 2;
+    const EDynamicFieldDoesNotExist: u64 = 3;
 
     // GameAssetId field to be added as a dynamic field in a cosmetic skin
     struct GameAssetId has copy, drop, store {}
@@ -129,14 +130,14 @@ module bushi::stats{
 
         let mut_uid = cosmetic_skin::cw_get_mut_uid(cosmetic_skin);
 
-        let game_asset_id_key = GameAssetIDKey {};
+        let game_asset_id_key = GameAssetId {};
         // check if cosmetic skin has a game asset id, if yes update, if not add
-        if (df::exists_<GameAssetIDKey>(mut_uid, game_asset_id_key)) {
+        if (df::exists_<GameAssetId>(mut_uid, game_asset_id_key)) {
         // update the game asset id
-        let old_game_asset_id = df::borrow_mut<GameAssetIDKey, String>(mut_uid, game_asset_id_key);
+        let old_game_asset_id = df::borrow_mut<GameAssetId, String>(mut_uid, game_asset_id_key);
         *old_game_asset_id = new_game_asset_id;
         } else {
-        df::add<GameAssetIDKey, String>(mut_uid, game_asset_id_key, new_game_asset_id);
+        df::add<GameAssetId, String>(mut_uid, game_asset_id_key, new_game_asset_id);
         };
   }
 
@@ -149,14 +150,14 @@ module bushi::stats{
         // make sure Cosmetic Skin is in-game
         assert!((cosmetic_skin::in_game(cosmetic_skin) == true), ECannotUpdate);
 
-        let game_asset_id_key = GameAssetIDKey {};
+        let game_asset_id_key = GameAssetId {};
 
         let mut_uid = cosmetic_skin::cw_get_mut_uid(cosmetic_skin);
 
         // check that cosmetic skin has that field
-        assert!(df::exists_<GameAssetIDKey>(mut_uid, game_asset_id_key), EDynamicFieldDoesNotExist);
+        assert!(df::exists_<GameAssetId>(mut_uid, game_asset_id_key), EDynamicFieldDoesNotExist);
         // remove the field
-        df::remove<GameAssetIDKey, String>(mut_uid, game_asset_id_key);
+        df::remove<GameAssetId, String>(mut_uid, game_asset_id_key);
     }
 
     // returns game asset id of cosmetic skin
@@ -165,13 +166,13 @@ module bushi::stats{
         cosmetic_skin: &CosmeticSkin,
     ): String {
         
-        let game_asset_id_key = GameAssetIDKey {};
+        let game_asset_id_key = GameAssetId {};
 
         let immut_uid = cosmetic_skin::get_immut_uid(cosmetic_skin);
 
         assert!(df::exists_(immut_uid, game_asset_id_key), EDynamicFieldDoesNotExist);
 
-        *df::borrow<GameAssetIDKey, String>(immut_uid, game_asset_id_key)
+        *df::borrow<GameAssetId, String>(immut_uid, game_asset_id_key)
   }
 
     // returns value of stat of cosmetic skin
@@ -187,7 +188,6 @@ module bushi::stats{
 
         // make sure stat exists
         assert!(df::exists_<StatKey>(immut_uid, stat_key), EDynamicFieldDoesNotExist);
-
         *df::borrow<StatKey, String>(immut_uid, stat_key)
   }
 
