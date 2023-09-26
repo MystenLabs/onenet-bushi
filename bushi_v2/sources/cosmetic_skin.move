@@ -299,6 +299,11 @@ module bushi::cosmetic_skin {
 
   }
 
+  // 
+  public fun cosmetic_skin_uid_mut(self: &mut CosmeticSkin): &mut UID{
+      &mut self.id
+  }
+
   #[test_only]
   public fun init_test(ctx: &mut TxContext){
       let otw = COSMETIC_SKIN {};
