@@ -41,6 +41,7 @@ module bushi::cosmetic_skin {
   const EWrongToken: u64 = 0;
   const ECannotUpdate: u64 = 1;
   const ELevelGreaterThanLevelCap: u64 = 2;
+  const ECosmeticSkinNotInGame: u64 = 3;
 
   /// royalty cut consts
   // TODO: specify the exact values
@@ -299,9 +300,38 @@ module bushi::cosmetic_skin {
 
   }
 
-  // 
-  public fun cosmetic_skin_uid_mut(self: &mut CosmeticSkin): &mut UID{
-      &mut self.id
+
+ // === Accesors ===
+
+  public fun admin_get_mut_uid(
+    _: &MintCap<CosmeticSkin>,
+    cosmetic_skin: &mut CosmeticSkin
+  ): &mut UID {
+    &mut cosmetic_skin.id
+  }
+
+  /// get a mutable reference of UID of Cosmetic Skin
+  /// only if Cosmetic Skin is in-game
+  /// (aborts otherwise)
+  public fun cw_get_mut_uid(
+    cosmetic_skin: &mut CosmeticSkin,
+  ): &mut UID {
+
+    assert!(cosmetic_skin.in_game == true, ECosmeticSkinNotInGame);
+
+    &mut cosmetic_skin.id
+  }
+
+  public fun get_immut_uid(
+    cosmetic_skin: &CosmeticSkin
+  ): &UID {
+    &cosmetic_skin.id
+  }
+
+  public fun in_game(
+    cosmetic_skin: &CosmeticSkin,
+  ): bool {
+    cosmetic_skin.in_game
   }
 
   #[test_only]
