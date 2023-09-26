@@ -20,7 +20,7 @@ echo "Setting .env.upgrade variables..."
 cat >.env.upgrade <<-UPGRADE_ENV
 DIGEST=$DIGEST
 UPGRADE_CAP_ID=$UPGRADE_CAP_ID
-PACKAGE_ID=$PACKAGE_ID
+NEW_PACKAGE_ID=$PACKAGE_ID
 ADMIN_PRIVATE_KEY=$(cat ~/.sui/sui_config/sui.keystore | jq -r '.[0]')
 UPGRADE_ENV
 
