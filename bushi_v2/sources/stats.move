@@ -142,7 +142,6 @@ module bushi::stats{
   }
 
     // remove game_asset_id
-    // aborts if the cosmetic skin does not have that field
     public fun remove_game_asset_id(
         cosmetic_skin: &mut CosmeticSkin,
     ) {
