@@ -35,6 +35,9 @@ module bushi::item {
 
   use liquidity_layer_v1::orderbook;
 
+  // Module dependency
+    use bushi::battle_pass::BattlePass;
+
 
   /// errors
   const EWrongToken: u64 = 0;
@@ -150,7 +153,7 @@ module bushi::item {
 
   /// mint a item
   /// by default in_game = false
-  public fun mint(mint_cap: &MintCap<Item>, name: String, description: String, image_url: String, level: u64, level_cap: u64, game_asset_id: String, stat_names: vector<String>, stat_values: vector<String>, in_game: bool, ctx: &mut TxContext): Item {
+  public fun mint(_mint_cap: &MintCap<BattlePass>, name: String, description: String, image_url: String, level: u64, level_cap: u64, game_asset_id: String, stat_names: vector<String>, stat_values: vector<String>, in_game: bool, ctx: &mut TxContext): Item {
 
     // make sure the level is not greater than the level cap
     assert!(level <= level_cap, ELevelGreaterThanLevelCap);
@@ -167,13 +170,6 @@ module bushi::item {
       stat_values,
       in_game,
     };
-
-    // emit a mint event
-      mint_event::emit_mint(
-      witness::from_witness(Witness {}),
-      mint_cap::collection_id(mint_cap),
-      &item
-    );
 
     item
   }
