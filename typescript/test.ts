@@ -10,7 +10,7 @@ dotenv.config();
 
 
 const PACKAGE_ID = process.env.PACKAGE_ID!;
-const MINT_CAP_ID = process.env.MINT_CAP_ID!;
+const BP_MINT_CAP_ID = process.env.BP_MINT_CAP!;
 const ONENET_PRIVATE_KEY = process.env.ONENET_PRIVATE_KEY!;
 const CUSTODIAL_WALLET_PRIVATE_KEY = process.env.CUSTODIAL_WALLET_PRIVATE_KEY!;
 // put another address here below because this is mine
@@ -49,12 +49,14 @@ async function mintToAddress(recipient: string) {
     {
       target: `${PACKAGE_ID}::battle_pass::mint_default`,
       arguments: [
-        txb.object(MINT_CAP_ID), 
+        txb.object(BP_MINT_CAP_ID), 
         txb.pure("Play Bushi to earn in-game assets using this battle pass", "string"),
         txb.pure("https://dummy.com", "string"),
         txb.pure("70", "u64"),
         txb.pure("1000", "u64"),
         txb.pure("1", "u64"),
+        txb.pure("1", "u64"),
+        txb.pure("1", "bool"),
       ]
     }
   )
@@ -88,7 +90,7 @@ async function createUnlockUpdatesTicket(recipient: string, battlePassId: string
     {
       target: `${PACKAGE_ID}::battle_pass::create_unlock_updates_ticket`,
       arguments: [
-        txb.object(MINT_CAP_ID),
+        txb.object(BP_MINT_CAP_ID),
         txb.pure(battlePassId),
       ]
     }
@@ -214,8 +216,10 @@ async function main(){
 
   // mint a battle pass to the custodial wallet
   let mintResult = await mintToAddress(custodialWalletAddress);
+  console.log(mintResult);
   // find the battle pass id from the mint result
   let [battlePass]: any = mintResult.objectChanges?.filter((objectChange) => (objectChange.type === "created" && objectChange.objectType == `${PACKAGE_ID}::battle_pass::BattlePass`));
+  console.log(battlePass);
   let battlePassId = battlePass.objectId;
   
   // create an update ticket and transfer it to the custodial wallet
@@ -229,7 +233,6 @@ async function main(){
 
   // update the battle pass fields
   await update(battlePassId, "2", "100", "1000");
-
   // lock updates and transfer the battle pass to the non custodial wallet
   let lockUpdatesAndTransferResult = await lockUpdatesAndTransferToNonCustodialWallet(battlePassId, nonCustodialWalletAddress);
 
