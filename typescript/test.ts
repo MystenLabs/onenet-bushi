@@ -244,7 +244,6 @@ async function main(){
 async function mintItemToAddress(recipient: string) {
 
   let txb = new TransactionBlock();
-  console.log("1");
   const adminCapItem = txb.moveCall(
     {
       target: `${NEW_PACKAGE_ID}::item::mint_admin_cap_item`,
@@ -252,7 +251,6 @@ async function mintItemToAddress(recipient: string) {
         txb.object(BP_MINT_CAP_ID),
       ]
     })
-  console.log("2");  
   txb.transferObjects([adminCapItem], txb.pure(onenetAddress));
   // call the mint_default to mint a battle pass
   let item = txb.moveCall(
@@ -272,7 +270,6 @@ async function mintItemToAddress(recipient: string) {
       ]
     }
   )
-  console.log("3"); 
   // transfer the battle pass to the custodial wallet
   txb.transferObjects([item], txb.pure(recipient));
 
@@ -306,4 +303,4 @@ async function testItem() {
 
 // main();
 
-// testItem();
+testItem();

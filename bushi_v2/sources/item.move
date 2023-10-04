@@ -49,7 +49,7 @@ module bushi::item {
         item_id: ID,
     }
 
-    /// --- Hero Updated Event ---
+    /// --- Item Stats Updated Event ---
     struct ItemStatsUpdated has copy, drop {
         id: ID,
         stat_names: vector<String>,
@@ -58,8 +58,7 @@ module bushi::item {
 
 
     // Mint an admin Item capability for authorizing Item actions  
-    public fun mint_admin_cap_item(_: &MintCap<BattlePass>, ctx: &mut TxContext): ItemAdminCap
-    {
+    public fun mint_admin_cap_item(_: &MintCap<BattlePass>, ctx: &mut TxContext): ItemAdminCap{
         ItemAdminCap { id: object::new(ctx) }
     }
 
