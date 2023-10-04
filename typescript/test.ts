@@ -4,13 +4,14 @@
 // 3. Updates for the battle pass are unlocked
 // 4. User's custodial wallet updates the battle pass fields
 // 5. User's custodial wallet sends the battle pass to a user's non-custodial wallet
-import {Ed25519Keypair, JsonRpcProvider, RawSigner, TransactionBlock, fromB64, testnetConnection} from "@mysten/sui.js"
+import {ContentsFields, Ed25519Keypair, JsonRpcProvider, RawSigner, TransactionBlock, fromB64, testnetConnection} from "@mysten/sui.js"
 import * as dotenv from "dotenv";
 dotenv.config();
 
 
 const PACKAGE_ID = process.env.PACKAGE_ID!;
-const MINT_CAP_ID = process.env.MINT_CAP_ID!;
+const NEW_PACKAGE_ID = process.env.NEW_PACKAGE_ID!;
+const BP_MINT_CAP_ID = process.env.BP_MINT_CAP!;
 const ONENET_PRIVATE_KEY = process.env.ONENET_PRIVATE_KEY!;
 const CUSTODIAL_WALLET_PRIVATE_KEY = process.env.CUSTODIAL_WALLET_PRIVATE_KEY!;
 // put another address here below because this is mine
@@ -27,6 +28,7 @@ function getKeyPair(privateKey: string): Ed25519Keypair{
 
 // make the public key for onenet from the private key stored in .env
 const onenetKeyPair = getKeyPair(ONENET_PRIVATE_KEY);
+const onenetAddress = onenetKeyPair.getPublicKey().toSuiAddress();
 const custodialWalletKeyPair = getKeyPair(CUSTODIAL_WALLET_PRIVATE_KEY);
 // address of custodial wallet from keypair
 const custodialWalletAddress = custodialWalletKeyPair.getPublicKey().toSuiAddress();
@@ -49,12 +51,14 @@ async function mintToAddress(recipient: string) {
     {
       target: `${PACKAGE_ID}::battle_pass::mint_default`,
       arguments: [
-        txb.object(MINT_CAP_ID), 
+        txb.object(BP_MINT_CAP_ID), 
         txb.pure("Play Bushi to earn in-game assets using this battle pass", "string"),
         txb.pure("https://dummy.com", "string"),
         txb.pure("70", "u64"),
         txb.pure("1000", "u64"),
         txb.pure("1", "u64"),
+        txb.pure("1", "u64"),
+        txb.pure("1", "bool"),
       ]
     }
   )
@@ -88,7 +92,7 @@ async function createUnlockUpdatesTicket(recipient: string, battlePassId: string
     {
       target: `${PACKAGE_ID}::battle_pass::create_unlock_updates_ticket`,
       arguments: [
-        txb.object(MINT_CAP_ID),
+        txb.object(BP_MINT_CAP_ID),
         txb.pure(battlePassId),
       ]
     }
@@ -214,8 +218,10 @@ async function main(){
 
   // mint a battle pass to the custodial wallet
   let mintResult = await mintToAddress(custodialWalletAddress);
+  console.log(mintResult);
   // find the battle pass id from the mint result
   let [battlePass]: any = mintResult.objectChanges?.filter((objectChange) => (objectChange.type === "created" && objectChange.objectType == `${PACKAGE_ID}::battle_pass::BattlePass`));
+  console.log(battlePass);
   let battlePassId = battlePass.objectId;
   
   // create an update ticket and transfer it to the custodial wallet
@@ -226,16 +232,78 @@ async function main(){
 
   // unlock updates for the battle pass
   let unlockUpdatesResult = await unlockUpdates(battlePassId, unlockUpdatesTicketId);
-
+  console.log("----------------- ", unlockUpdatesResult);
   // update the battle pass fields
   await update(battlePassId, "2", "100", "1000");
-
   // lock updates and transfer the battle pass to the non custodial wallet
   let lockUpdatesAndTransferResult = await lockUpdatesAndTransferToNonCustodialWallet(battlePassId, nonCustodialWalletAddress);
 
 }
 
-main();
+// Onenet mints a battle pass and sends it to a user
+async function mintItemToAddress(recipient: string) {
 
+  let txb = new TransactionBlock();
+  console.log("1");
+  const adminCapItem = txb.moveCall(
+    {
+      target: `${NEW_PACKAGE_ID}::item::mint_admin_cap_item`,
+      arguments: [
+        txb.object(BP_MINT_CAP_ID),
+      ]
+    })
+  console.log("2");  
+  txb.transferObjects([adminCapItem], txb.pure(onenetAddress));
+  // call the mint_default to mint a battle pass
+  let item = txb.moveCall(
+    {
+      target: `${NEW_PACKAGE_ID}::item::mint`,
+      arguments: [
+        txb.object("0xd11cde31fdcd0a8f95f80292c7453fc80509174b170953ddb8fc981a910660c2"), 
+        txb.pure("Item1", "string"),
+        txb.pure("Play Bushi to earn in-game assets using this battle pass", "string"),
+        txb.pure("https://dummy.com", "string"),
+        txb.pure("70", "u64"),
+        txb.pure("1000", "u64"),
+        txb.pure("['111', '222']", 'vector<string>'),
+        txb.pure("['games', 'kills']", 'vector<string>'),
+        txb.pure("['5', '111']", 'vector<string>'),
+        txb.pure("1", "bool"),
+      ]
+    }
+  )
+  console.log("3"); 
+  // transfer the battle pass to the custodial wallet
+  txb.transferObjects([item], txb.pure(recipient));
 
+  // arbitrary value for gas budget
+  txb.setGasBudget(100000000);
+  // sign and execute the transaction
+  let result = await onenet.signAndExecuteTransactionBlock({
+    transactionBlock: txb,
+    requestType: "WaitForLocalExecution",
+    options: {
+      showEffects: true,
+      showEvents: true,
+      showObjectChanges: true,
+    },
+    });
 
+    return result;
+}
+
+async function testItem() {
+  // mint a battle pass to the custodial wallet
+  console.log("0");
+  let mintResult = await mintItemToAddress(custodialWalletAddress);
+  console.log(mintResult);
+  // find the battle pass id from the mint result
+  let [item]: any = mintResult.objectChanges?.filter((objectChange) => (objectChange.type === "created" && objectChange.objectType == `${NEW_PACKAGE_ID}::item::Item`));
+  console.log(item);
+  // let itemId = item.objectId;
+
+}
+
+// main();
+
+testItem();
