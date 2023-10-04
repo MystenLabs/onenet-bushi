@@ -65,7 +65,7 @@ module bushi::item {
     image_url: String,
     level: u64,
     level_cap: u64,
-    game_asset_id: String,
+    game_asset_ids: vector<String>,
     stat_names: vector<String>,
     stat_values: vector<String>,
     in_game: bool,
@@ -150,7 +150,7 @@ module bushi::item {
 
   /// mint a item
   /// by default in_game = false
-  public fun mint(mint_cap: &MintCap<Item>, name: String, description: String, image_url: String, level: u64, level_cap: u64, game_asset_id: String, stat_names: vector<String>, stat_values: vector<String>, in_game: bool, ctx: &mut TxContext): Item {
+  public fun mint(mint_cap: &MintCap<Item>, name: String, description: String, image_url: String, level: u64, level_cap: u64, game_asset_ids: vector<String>, stat_names: vector<String>, stat_values: vector<String>, in_game: bool, ctx: &mut TxContext): Item {
 
     // make sure the level is not greater than the level cap
     assert!(level <= level_cap, ELevelGreaterThanLevelCap);
@@ -162,7 +162,7 @@ module bushi::item {
       image_url,
       level,
       level_cap,
-      game_asset_id,
+      game_asset_ids,
       stat_names,
       stat_values,
       in_game,
@@ -334,7 +334,7 @@ module bushi::item {
       image_url: _,
       level: _,
       level_cap: _,
-      game_asset_id: _,
+      game_asset_ids: _,
       stat_names: _,
       stat_values: _,
       in_game: _,

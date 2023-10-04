@@ -310,7 +310,7 @@ module bushi::item_test {
   }
 
   #[test]
-  fun test_add_or_edit_dfs(){
+  fun test_update_stats(){
 
     let scenario_val = test_scenario::begin(ADMIN);
     let scenario = &mut scenario_val;
@@ -338,8 +338,8 @@ module bushi::item_test {
     // next transaction by user to update their item kills stat
     test_scenario::next_tx(scenario, USER);
     let item = test_scenario::take_from_address<Item>(scenario, USER);
-    let stat_names = vector<String>[utf8(b"kills")];
-    let stat_values = vector<String>[utf8(b"10")];
+    let stat_names = vector<String>[utf8(b"kills"), utf8(b"games")];
+    let stat_values = vector<String>[utf8(b"10"), utf8(b"5")];
     item::update_stats(
       &mut item,
       stat_names,
@@ -352,6 +352,9 @@ module bushi::item_test {
 
     assert!(*vector::borrow(&item::stat_names(&item), 0) == utf8(b"kills"), EIncorrectName);
     assert!(*vector::borrow(&item::stat_values(&item), 0) == utf8(b"10"), EIncorrectName);
+
+    assert!(*vector::borrow(&item::stat_names(&item), 1) == utf8(b"games"), EIncorrectName);
+    assert!(*vector::borrow(&item::stat_values(&item), 1) == utf8(b"5"), EIncorrectName);
     
     assert!(item::stat_names(&item) == stat_names, EIncorrectName);
     assert!(item::stat_values(&item) == stat_values, EIncorrectName);
@@ -477,7 +480,7 @@ module bushi::item_test {
 
   fun mint(name: String, description:String, image_url: String, level: u64, level_cap: u64, scenario: &mut Scenario): Item{
     let mint_cap = test_scenario::take_from_address<MintCap<Item>>(scenario, ADMIN);
-    let item = item::mint(&mint_cap, name, description, image_url, level, level_cap, utf8(b"id"), vector<String>[], vector<String>[], false, test_scenario::ctx(scenario));
+    let item = item::mint(&mint_cap, name, description, image_url, level, level_cap, vector<String>[], vector<String>[], vector<String>[], false, test_scenario::ctx(scenario));
     test_scenario::return_to_address(ADMIN, mint_cap);
     item
   }
