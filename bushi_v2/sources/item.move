@@ -7,8 +7,8 @@ module bushi::item {
     // Sui imports
     use sui::display::{Self, Display};
     use sui::object::{Self, ID, UID};
-    use sui::transfer;
-    use sui::tx_context::{sender,TxContext};
+    use sui::tx_context::{TxContext};
+    use sui::event::emit;
 
     use nft_protocol::mint_cap::{MintCap};
 
@@ -36,7 +36,7 @@ module bushi::item {
         image_url: String,
         level: u64,
         level_cap: u64,
-        game_asset_id: String,
+        game_asset_ids: vector<String>,
         stat_names: vector<String>,
         stat_values: vector<String>,
         in_game: bool
@@ -49,19 +49,24 @@ module bushi::item {
         item_id: ID,
     }
 
+    /// --- Hero Updated Event ---
+    struct ItemStatsUpdated has copy, drop {
+        id: ID,
+        stat_names: vector<String>,
+        stat_values: vector<String>,
+    }
+
+
     // Mint an admin Item capability for authorizing Item actions  
-    public fun mint_admin_cap_item(_: &MintCap<BattlePass>, ctx: &mut TxContext)
+    public fun mint_admin_cap_item(_: &MintCap<BattlePass>, ctx: &mut TxContext): ItemAdminCap
     {
-        // Transfer Item Admin Cap to sender
-        transfer::public_transfer(ItemAdminCap { 
-            id: object::new(ctx)
-        }, sender(ctx));
+        ItemAdminCap { id: object::new(ctx) }
     }
 
     /// mint a item
     /// by default in_game = false
     public fun mint(_: &mut ItemAdminCap, name: String, description: String, 
-        image_url: String, level: u64, level_cap: u64, game_asset_id: String, 
+        image_url: String, level: u64, level_cap: u64, game_asset_ids: vector<String>, 
         stat_names: vector<String>, stat_values: vector<String>, in_game: bool, 
         ctx: &mut TxContext): Item
     {
@@ -75,7 +80,7 @@ module bushi::item {
             image_url,
             level,
             level_cap,
-            game_asset_id,
+            game_asset_ids,
             stat_names,
             stat_values,
             in_game,
@@ -127,6 +132,13 @@ module bushi::item {
         item.level = new_level;
     }
 
+    /// update game_asset_ids
+    public fun update_game_asset_ids(item: &mut Item, game_asset_ids: vector<String>)
+    {
+        assert!(item.in_game == true, ECannotUpdate);
+        item.game_asset_ids = game_asset_ids;
+    }
+
     /// update item stats
     public fun update_stats(
         item: &mut Item,
@@ -140,6 +152,16 @@ module bushi::item {
 
         item.stat_names = stat_names;
         item.stat_values = stat_values;
+
+         // Create and emit an ItemStatsUpdated event
+        let item_stats_updated_event = ItemStatsUpdated {
+            id: object::uid_to_inner(&item.id),
+            stat_names: item.stat_names,
+            stat_values: item.stat_values
+        };
+        // emit the event when the item stats are updated
+        emit(item_stats_updated_event);
+
     }
 
     // === Exports ===
@@ -186,7 +208,7 @@ module bushi::item {
             image_url: _,
             level: _,
             level_cap: _,
-            game_asset_id: _,
+            game_asset_ids: _,
             stat_names: _,
             stat_values: _,
             in_game: _,
