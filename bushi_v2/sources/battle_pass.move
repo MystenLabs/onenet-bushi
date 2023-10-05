@@ -60,7 +60,7 @@ module bushi::battle_pass{
   const CLUTCHY_ROYALTY_ADDRESS: address = @0x61028a4c388514000a7de787c3f7b8ec1eb88d1bd2dbc0d3dfab37078e39630f;
 
   /// consts for mint_default
-  const DEFAULT_INIT_LEVEL: u64 = 0;
+  const DEFAULT_INIT_LEVEL: u64 = 1;
   const DEFAULT_INIT_XP: u64 = 0;
 
   /// One-time-witness
@@ -385,6 +385,23 @@ module bushi::battle_pass{
     transfer_token::confirm(battlepass, transfer_token, withdraw_request::inner_mut(&mut withdraw_request));
     withdraw_request::confirm<BattlePass>(withdraw_request, withdraw_policy);
 
+  }
+
+  public fun burn(battle_pass: BattlePass) {
+    let BattlePass {
+      id,
+      description: _,
+      image_url: _,
+      level: _,
+      level_cap: _,
+      xp: _,
+      xp_to_next_level: _,
+      rarity: _,
+      season: _,
+      in_game: _,
+    } = battle_pass;
+
+    object::delete(id);
   }
 
   // === test only ===
