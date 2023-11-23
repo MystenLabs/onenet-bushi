@@ -18,7 +18,7 @@ const OB_PERMISSIONS_PACKAGE_ID = process.env.OB_PERMISSIONS_PACKAGE_ID!;
 const MINT_CAP_ID = process.env.MINT_CAP_ID!;
 const PUBLISHER_ID = process.env.PUBLISHER_ID!;
 
-// inssert your withdrawPolicy for the BattlePass here 
+// insert your withdrawPolicy for the BattlePass here 
 const withdrawPolicy = "0x91b68eede0cb8c0cb08e6b7e5ec67af81fb881495ecec91a3347084907b427bf";
 
 
@@ -50,6 +50,7 @@ const nonCustodialWalletAddress = nonCustodialWalletKeyPair.getPublicKey().toSui
 console.log("ncw_address= ", nonCustodialWalletAddress);
 console.log("onenet_address= ", onenetAddress);
 const onenet = new RawSigner(onenetKeyPair, provider);
+const custodialWallet = new RawSigner(custodialWalletKeyPair, provider);
 const nonCustodialWallet = new RawSigner(nonCustodialWalletKeyPair, provider);
 
 
@@ -78,6 +79,7 @@ async function createUserKiosk() {
     });
     return result;
 }
+
 
 // User mint a NFT and deposit to his Kiosk
 async function mintNFTandDepositToKiosk(kioskID: string) {
@@ -198,49 +200,88 @@ async function withdrawFromKiosk(kiosk: string, battlePass: string, transferToke
     return result;
 }
 
+async function depositToKiosk(battlePass: string, kioskId: string, ) {
+
+    let txb = new TransactionBlock();
+
+    txb.moveCall(
+        {
+            target: `${PACKAGE_ID}::battle_pass::export_to_kiosk`,
+            arguments: [
+                txb.object(battlePass),
+                txb.object(kioskId), 
+            ],
+        });
+     
+    txb.setGasBudget(100000000);
+    // sign and execute the transaction
+    let result = await custodialWallet.signAndExecuteTransactionBlock({
+        transactionBlock: txb,
+        requestType: "WaitForLocalExecution",
+        options: {
+            showEffects: true,
+            showEvents: true,
+            showObjectChanges: true,
+        },
+    });
+    return result;
+}
+
 
 async function main() {
 
-    // ----- First call creates a kiosk for the user
-    let createUserKioskResult = await createUserKiosk();
-    let [kioskResult]: any = createUserKioskResult.objectChanges?.filter(
-        (objectChange) =>
-            objectChange.type === "created" &&
-            objectChange.objectType == `${SUI_FRAMEWORK_ADDRESS}::kiosk::Kiosk`
-    )
+    // --------------- First call creates a kiosk for the user ---------------
+    // let createUserKioskResult = await createUserKiosk();
+    // let [kioskResult]: any = createUserKioskResult.objectChanges?.filter(
+    //     (objectChange) =>
+    //         objectChange.type === "created" &&
+    //         objectChange.objectType == `${SUI_FRAMEWORK_ADDRESS}::kiosk::Kiosk`
+    // )
 
-    let kioskId = kioskResult.objectId;
-    let kioskOwner = kioskResult.sender;
+    // let kioskId = kioskResult.objectId;
+    // let kioskOwner = kioskResult.sender;
 
-    console.log("kioskId= ", kioskId);
-    console.log("kioskOwner= ", kioskOwner);
+    // console.log("kioskId= ", kioskId);
+    // console.log("kioskOwner= ", kioskOwner);
 
-    // ----- Second call mints a NFT and deposit to the kiosk
-    let mintNFTandDepositToKioskResult = await mintNFTandDepositToKiosk(kioskId);
+    // --------------- Second call mints a NFT and deposit to the kiosk ---------------
+    // let mintNFTandDepositToKioskResult = await mintNFTandDepositToKiosk("0x209b4bb590d81551e670d1fc5a601ded96e78cf117c948c33673179234f2be6c");
 
-    let [battlePassResult]: any = mintNFTandDepositToKioskResult.objectChanges?.filter(
-        (objectChange) =>
-            objectChange.type === "created" &&
-            objectChange.objectType == `${PACKAGE_ID}::battle_pass::BattlePass`
-    )
-    let battlePassId = battlePassResult.objectId;
-    console.log("--------- battlePassId = ", battlePassId);
+    // let [battlePassResult]: any = mintNFTandDepositToKioskResult.objectChanges?.filter(
+    //     (objectChange) =>
+    //         objectChange.type === "created" &&
+    //         objectChange.objectType == `${PACKAGE_ID}::battle_pass::BattlePass`
+    // )
+    // let battlePassId = battlePassResult.objectId;
+    // console.log("--------- battlePassId = ", battlePassId);
 
-    // ----- Third call creates a transfer token to withdraw the NFT from the kiosk 
-    let createTransferTokenResult = await createTransferToken()
+    //  --------------- Third call creates a transfer token to withdraw the NFT from the kiosk ---------------
+    // await withdrawFunction();
 
-    let [TransferTokenResult]: any = createTransferTokenResult.objectChanges?.filter(
-        (objectChange) =>
-            objectChange.type === "created" &&
-            objectChange.objectType.includes(`${NFT_PROTOCOL_PACKAGE_ID}::transfer_token::TransferToken`)
-    )
-    let transferTokenID = TransferTokenResult.objectId;
+    // async function withdrawFunction() {
+    //     let createTransferTokenResult = await createTransferToken();
 
-    console.log("--------- transferTokenID= ", transferTokenID);
+    //     let [TransferTokenResult]: any = createTransferTokenResult.objectChanges?.filter(
+    //         (objectChange) => objectChange.type === "created" &&
+    //             objectChange.objectType.includes(`${NFT_PROTOCOL_PACKAGE_ID}::transfer_token::TransferToken`)
+    //     );
+    //     let transferTokenID = TransferTokenResult.objectId;
 
-    //  ----- Fourth call withdraws the NFT from the kiosk
-    let withdrawFromKioskResult = await withdrawFromKiosk(kioskId, battlePassId, transferTokenID, withdrawPolicy);
-    console.log("--------- Withdraw NFT From Kiosk = ", withdrawFromKioskResult);
+    //     console.log("--------- transferTokenID= ", transferTokenID);
+
+    //  --------------- Fourth call withdraws the NFT from the kiosk ---------------
+    //     let withdrawFromKioskResult = await withdrawFromKiosk("0x209b4bb590d81551e670d1fc5a601ded96e78cf117c948c33673179234f2be6c", "0xefbb8564864bac9b8fd3d75819d3e483d901b3bbfe4de8fce6f444a5fa0b5635", transferTokenID, withdrawPolicy);
+    //     console.log("--------- Withdraw NFT From Kiosk = ", withdrawFromKioskResult);
+    // }
+
+    //  --------------- Fifth call deposits the NFT to the kiosk ---------------
+    await depositFunction();
+
+    async function depositFunction() {
+        let depositToKioskResult = await depositToKiosk("0xefbb8564864bac9b8fd3d75819d3e483d901b3bbfe4de8fce6f444a5fa0b5635","0x209b4bb590d81551e670d1fc5a601ded96e78cf117c948c33673179234f2be6c");
+        console.log("--------- Deposit NFT to Kiosk = ", depositToKioskResult);
+        
+    }
 }
 
 // call main
